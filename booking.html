@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Executive Court - Book a Ground</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+  <link rel="stylesheet" href="src/css/output.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sigmar&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
+    rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sigmar&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
+    rel="stylesheet">
+</head>
+
+<body class="bg-gradient-to-b from-green-900 to-blue-200 bg-no-repeat">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+      <!-- Header -->
+      <div class="bg-white p-6 border-b">
+        <h1 class="text-3xl font-bold text-center">
+          <span
+            class="font-sigmar  text-3xl mt-1 bg-gradient-to-r from-blue-600 to-green-500  inline-block text-transparent bg-clip-text" id="groundName">Executive
+            Court</span>
+
+        </h1>
+        <p class="text-center text-gray-600 mt-2">Complete the form below to book your ground</p>
+      </div>
+
+      <!-- Form -->
+      <form class="p-6" action="src/backend/process_booking.php" method="POST">
+        <input type="hidden" name="groundId" id="groundIdInput">
+        <!-- Ground Image -->
+        <div class="mb-6">
+          <img src="/api/placeholder/600/300" alt="Soccer Field" class="w-full rounded-lg " id="groundImage">
+        </div>
+
+        <!-- Personal Details -->
+        <div class="mb-6">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">Personal Details</h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="fullName" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+              <input type="text" id="fullName" name="fullName" required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <input type="email" id="email" name="email" required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+
+            <div>
+              <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <input type="tel" id="phone" name="phone" required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+
+            <div>
+              <label for="teamName" class="block text-sm font-medium text-gray-700 mb-1">Team Name (Optional)</label>
+              <input type="text" id="teamName" name="teamName"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking Details -->
+        <div class="mb-6">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">Booking Details</h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-1 gap-4 w-full">
+            <div>
+              <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <input type="date" id="date" name="date" required placeholder="Select date"
+                class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 datepicker w-full">
+            </div>
+          </div>
+        </div>
+
+        <!-- Time Selection -->
+        <div
+          class="pt-5 border-t border-gray-200 dark:border-gray-800 flex sm:flex-row flex-col sm:space-x-5 rtl:space-x-reverse mb-6">
+          <button type="button" data-collapse-toggle="timetable"
+            class="inline-flex items-center w-full py-2 px-5 me-2 justify-center text-sm font-medium text-white rounded-md bg-gradient-to-br from-[#013220] to-[#39ff14] hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 transition">
+            <svg class="w-4 h-4 text-gray-800 dark:text-white me-2" aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+              <path fill-rule="evenodd"
+                d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4a1 1 0 1 0-2 0v4a1 1 0 0 0 .293.707l3 3a1 1 0 0 0 1.414-1.414L13 11.586V8Z"
+                clip-rule="evenodd" />
+            </svg>
+            Pick a time
+          </button>
+          <label class="sr-only">Pick a time</label>
+          <ul id="timetable" class="grid w-full grid-cols-2 gap-2 mt-5">
+            <li>
+              <input type="radio" id="6-am" value="06:00" class="hidden peer" name="timetable">
+              <label for="6-am" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                06:00 AM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="7-am" value="07:00" class="hidden peer" name="timetable">
+              <label for="7-am" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                07:00 AM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="8-am" value="08:00" class="hidden peer" name="timetable">
+              <label for="8-am" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                08:00 AM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="9-am" value="09:00" class="hidden peer" name="timetable">
+              <label for="9-am" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                09:00 AM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="5-pm" value="17:00" class="hidden peer" name="timetable" checked>
+              <label for="5-pm" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                05:00 PM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="6-pm" value="18:00" class="hidden peer" name="timetable">
+              <label for="6-pm" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                06:00 PM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="7-pm" value="19:00" class="hidden peer" name="timetable">
+              <label for="7-pm" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                07:00 PM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="8-pm" value="20:00" class="hidden peer" name="timetable">
+              <label for="8-pm" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                08:00 PM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="9-pm" value="21:00" class="hidden peer" name="timetable">
+              <label for="9-pm" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                09:00 PM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="10-pm" value="22:00" class="hidden peer" name="timetable">
+              <label for="10-pm" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                10:00 PM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="11-pm" value="23:00" class="hidden peer" name="timetable">
+              <label for="11-pm" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                11:00 PM
+              </label>
+            </li>
+            <li>
+              <input type="radio" id="12-am" value="00:00" class="hidden peer" name="timetable">
+              <label for="12-am" class="inline-flex items-center justify-center w-full p-2 text-sm font-medium text-center border rounded-lg cursor-pointer 
+                                   text-white border-[#013220] bg-[#013220]
+                                   transition-all duration-300
+                                   peer-checked:bg-[#39ff14] peer-checked:text-white peer-checked:border-[#39ff14]">
+                12:00 AM
+              </label>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Payment Options -->
+        <div class="mb-6">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">Payment Method</h2>
+
+          <div class="flex flex-col space-y-4">
+            <div
+              class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+              <input type="radio" id="cash" name="paymentMethod" value="cash" checked
+                class="w-4 h-4 text-green-600 focus:ring-green-500">
+              <label for="cash" class="ml-3 block text-sm font-medium text-gray-700 cursor-pointer">
+                <div class="flex items-center">
+                  <svg class="w-6 h-6 mr-2 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Cash on Arrival
+                </div>
+                <p class="text-sm text-gray-500 ml-8">Pay in cash when you arrive at the venue</p>
+              </label>
+            </div>
+
+            <div
+              class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+              <input type="radio" id="card" name="paymentMethod" value="card"
+                class="w-4 h-4 text-green-600 focus:ring-green-500">
+              <label for="card" class="ml-3 block text-sm font-medium text-gray-700 cursor-pointer">
+                <div class="flex items-center">
+                  <svg class="w-6 h-6 mr-2 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  Pay with Card
+                </div>
+                <p class="text-sm text-gray-500 ml-8">Secure online payment with credit/debit card</p>
+              </label>
+            </div>
+          </div>
+
+          <!-- Card Payment Details (conditionally shown) -->
+          <div id="cardDetails" class="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50 hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <label for="cardNumber" class="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+              </div>
+
+              <div>
+                <label for="cardExpiry" class="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                <input type="text" id="cardExpiry" name="cardExpiry" placeholder="MM/YY"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+              </div>
+
+              <div>
+                <label for="cardCvc" class="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+                <input type="text" id="cardCvc" name="cardCvc" placeholder="123"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+              </div>
+
+              <div class="md:col-span-2">
+                <label for="cardName" class="block text-sm font-medium text-gray-700 mb-1">Name on Card</label>
+                <input type="text" id="cardName" name="cardName" placeholder="John Doe"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Terms and Conditions -->
+        <div class="mb-6">
+          <div class="flex items-start">
+            <input type="checkbox" id="terms" name="terms" required class="mt-1">
+            <label for="terms" class="ml-2 block text-sm text-gray-700">
+              I agree to the <a href="#" class="text-blue-600 hover:underline">Terms and Conditions</a> and <a href="#"
+                class="text-blue-600 hover:underline">Cancellation Policy</a>
+            </label>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="mt-8">
+          <button type="submit"
+            class="w-full bg-green-600 text-white rounded-md bg-gradient-to-br from-[#013220] to-[#39ff14] hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 transition p-2">
+            Book Now
+          </button>
+        </div>
+      </form>
+
+      <!-- Footer -->
+      <div class="bg-gray-50 px-6 py-4">
+        <p class="text-sm text-gray-600 text-center">
+          For assistance, please contact us at <span class="font-semibold">support@footy.com</span> or call <span
+            class="font-semibold">+92-334-2228392</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="src/js/booking.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+</body>
+
+</html>

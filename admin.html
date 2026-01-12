@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Grounds Admin Panel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="src/css/output.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sigmar&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+
+</head>
+<body class="bg-gradient-to-b to-blue-200 from-green-900 min-h-screen ">
+    <!-- Sidebar -->
+    <div class="flex">
+        <div class="bg-gradient-to-b from-green-900 to-blue-200 text-[#FEFAE0]  w-64 min-h-screen py-6 px-4 fixed">
+            <div class="flex items-center mb-8 justify-center">
+                <a class="text-3xl font-bold font-sigmar text-[#d2742c] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.9)]" href="index.html">Footy</a>
+            </div>
+            <nav>
+                <ul >
+                    <li class="mb-4">
+                        <button onclick="showDashboard()" class="flex items-center py-2 px-4 w-full text-left rounded hover:bg-green-700 transition-colors active-nav" id="dashboard-btn">
+                            <i class="fas fa-home mr-3"></i> Dashboard
+                        </button>
+                    </li>
+                    <li class="mb-4">
+                        <button onclick="showGrounds()" class="flex items-center py-2 px-4 w-full text-left rounded hover:bg-green-700 transition-colors" id="grounds-btn">
+                            <i class="fas fa-map-marker-alt mr-3"></i> Grounds
+                        </button>
+                    </li>
+                    <li class="mb-4">
+                        <button onclick="showBookings()" class="flex items-center py-2 px-4 w-full text-left rounded hover:bg-green-700 transition-colors" id="bookings-btn">
+                            <i class="fas fa-calendar-alt mr-3"></i> Bookings
+                        </button>
+                    </li>
+
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="ml-64 p-6 w-full ">
+            <!-- Header -->
+            <header class="flex justify-between items-center mb-6 ">
+                <h2 class="text-2xl font-bold text-[#FEFAE0] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]" id="page-title">Dashboard</h2>
+                <div class="flex items-center ">
+                    <div class="relative ">
+                        <button onclick="toggleNotifications()" class="relative p-2 text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-bell text-[#FEFAE0] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]"></i>
+                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        <div id="notifications-dropdown" class="hidden absolute right-0 w-64 mt-2 bg-white rounded-lg shadow-xl z-10">
+                            <div class="p-4 border-b">
+                                <h3 class="font-semibold">Notifications</h3>
+                            </div>
+                            <div class="p-2">
+                                <div class="p-2 hover:bg-gray-100 rounded">
+                                    <p class="text-sm">New booking request for Ground 1</p>
+                                    <p class="text-xs text-gray-500">5 minutes ago</p>
+                                </div>
+                                <div class="p-2 hover:bg-gray-100 rounded">
+                                    <p class="text-sm">Maintenance scheduled for Ground 3</p>
+                                    <p class="text-xs text-gray-500">1 hour ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ml-4 relative">
+                        <button onclick="toggleUserMenu()" class="flex items-center text-[#FEFAE0] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] hover:text-gray-800">
+                            <div class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center mr-2">
+                                <span>A</span>
+                            </div>
+                            <span class="">Admin</span>
+                            <i class="fas fa-chevron-down ml-2"></i>
+                        </button>
+                        <div id="user-dropdown" class="hidden absolute right-0 w-48 mt-2 bg-white rounded-lg shadow-xl z-10">
+                            <a href="#" class="block p-3 hover:bg-gray-100"><i class="fas fa-user mr-2"></i> Profile</a>
+                            <a href="#" class="block p-3 hover:bg-gray-100"><i class="fas fa-cog mr-2"></i> Settings</a>
+                            <a href="#" class="block p-3 hover:bg-gray-100 text-red-600"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="section-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-gray-500">Total Grounds</p>
+                                <div id="ground-count" class="text-3xl font-bold ">Loading grounds...</div>
+                            </div>
+                            <div class="p-3 bg-green-100 rounded-full">
+                                <i class="fas fa-map-marker-alt text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-gray-500">Active Bookings</p>
+                                <h3 id="booking-count" class="text-3xl font-bold">Loading...</h3>
+                            </div>
+                            <div class="p-3 bg-blue-100 rounded-full">
+                                <i class="fas fa-calendar-check text-blue-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-gray-500">This Week Revenue</p>
+                                <h3 id="weekly-revenue" class="text-3xl font-bold">$0</h3>
+                            </div>
+                            <div class="p-3 bg-yellow-100 rounded-full">
+                                <i class="fas fa-money-bill-wave text-yellow-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-gray-500">Pending Payments</p>
+                                <h3 id="pending-requests" class="text-3xl font-bold">0</h3>
+                            </div>
+                            <div class="p-3 bg-red-100 rounded-full">
+                                <i class="fas fa-clock text-red-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-xl font-semibold mb-4">Recent Bookings</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
+                                <thead>
+                                    <tr class="border-b">
+                                        <th class="py-2 px-4 text-left">Ground</th>
+                                        <th class="py-2 px-4 text-left">Date</th>
+                                        <th class="py-2 px-4 text-left">Time</th>
+                                        <th class="py-2 px-4 text-left">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-bookings-body">
+                                    <!-- <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-2 px-4">Ground 1</td>
+                                        <td class="py-2 px-4">May 02, 2025</td>
+                                        <td class="py-2 px-4">15:00 - 17:00</td>
+                                        <td class="py-2 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Confirmed</span></td>
+                                    </tr>
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-2 px-4">Ground 3</td>
+                                        <td class="py-2 px-4">May 02, 2025</td>
+                                        <td class="py-2 px-4">18:00 - 20:00</td>
+                                        <td class="py-2 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Confirmed</span></td>
+                                    </tr>
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="py-2 px-4">Ground 2</td>
+                                        <td class="py-2 px-4">May 03, 2025</td>
+                                        <td class="py-2 px-4">10:00 - 12:00</td>
+                                        <td class="py-2 px-4"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Pending</span></td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-2 px-4">Ground 5</td>
+                                        <td class="py-2 px-4">May 03, 2025</td>
+                                        <td class="py-2 px-4">14:00 - 16:00</td>
+                                        <td class="py-2 px-4"><span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Cancelled</span></td>
+                                    </tr> -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-xl font-semibold mb-4">Ground Availability Today</h3>
+                        <div class="space-y-4" id="ground-availability">
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <p>Ground 1</p>
+                                    <p class="text-sm text-green-600">3 slots available</p>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: 70%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <p>Ground 2</p>
+                                    <p class="text-sm text-green-600">5 slots available</p>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: 40%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <p>Ground 3</p>
+                                    <p class="text-sm text-red-600">Fully Booked</p>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-red-600 h-2 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <p>Ground 4</p>
+                                    <p class="text-sm text-yellow-600">Under Maintenance</p>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-yellow-600 h-2 rounded-full" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <p>Ground 5</p>
+                                    <p class="text-sm text-green-600">2 slots available</p>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: 80%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grounds Section -->
+            <div id="grounds-section" class="section-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold">All Grounds</h3>
+                    <button onclick="showAddGroundModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Add New Ground
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-4 flex justify-between items-center border-b">
+                        <div class="relative">
+                            <input type="text" placeholder="Search grounds..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                        <div class="flex">
+                            <select class="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent mr-2">
+                                <option>All Status</option>
+                                <option>Available</option>
+                                <option>Booked</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-50 border-b">
+                                    <th class="py-3 px-4 text-left">ID</th>
+                                    <th class="py-3 px-4 text-left">Name</th>
+                                    <th class="py-3 px-4 text-left">Location</th>
+                                    <th class="py-3 px-4 text-left">Rate/Hr</th>
+                                    <th class="py-3 px-4 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="groundsTableBody">
+                                <!-- <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">#G1</td>
+                                    <td class="py-3 px-4">Central Stadium</td>
+                                    <td class="py-3 px-4">Downtown</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Available</span></td>
+                                    <td class="py-3 px-4">$120</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex space-x-2">
+                                            <button onclick="showEditGroundModal(this)" class="text-blue-600 hover:text-blue-800" data-ground-id="#G1"><i class="fas fa-edit"></i></button>
+                                            <button onclick="confirmDeleteGround(this)" class="text-red-600 hover:text-red-800" data-ground-id="#G1"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">#G2</td>
+                                    <td class="py-3 px-4">Riverside Pitch</td>
+                                    <td class="py-3 px-4">East End</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Available</span></td>
+                                    <td class="py-3 px-4">$85</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex space-x-2">
+                                            <button onclick="showEditGroundModal(this)" class="text-blue-600 hover:text-blue-800" data-ground-id="#G2"><i class="fas fa-edit"></i></button>
+                                            <button onclick="confirmDeleteGround(this)" class="text-red-600 hover:text-red-800" data-ground-id="#G2"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">#G3</td>
+                                    <td class="py-3 px-4">Parkside Field</td>
+                                    <td class="py-3 px-4">North Park</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Booked</span></td>
+                                    <td class="py-3 px-4">$60</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex space-x-2">
+                                            <button onclick="showEditGroundModal(this)" class="text-blue-600 hover:text-blue-800" data-ground-id="#G3"><i class="fas fa-edit"></i></button>
+                                            <button onclick="confirmDeleteGround(this)" class="text-red-600 hover:text-red-800" data-ground-id="#G3"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 px-4">#G4</td>
+                                    <td class="py-3 px-4">Community Center</td>
+                                    <td class="py-3 px-4">West District</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Maintenance</span></td>
+                                    <td class="py-3 px-4">$75</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex space-x-2">
+                                            <button onclick="showEditGroundModal(this)" class="text-blue-600 hover:text-blue-800" data-ground-id="#G4"><i class="fas fa-edit"></i></button>
+                                            <button onclick="confirmDeleteGround(this)" class="text-red-600 hover:text-red-800" data-ground-id="#G4"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4">#G5</td>
+                                    <td class="py-3 px-4">Sports Complex</td>
+                                    <td class="py-3 px-4">South Gate</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Available</span></td>
+                                    <td class="py-3 px-4">$110</td>
+                                    <td class="py-3 px-4">
+                                        <div class="flex space-x-2">
+                                            <button onclick="showEditGroundModal(this)" class="text-blue-600 hover:text-blue-800" data-ground-id="#G5"><i class="fas fa-edit"></i></button>
+                                            <button onclick="confirmDeleteGround(this)" class="text-red-600 hover:text-red-800" data-ground-id="#G5"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr> -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="p-4 flex justify-between items-center border-t">
+                        <p class="text-sm text-gray-500">Showing 1 to 5 of 8 entries</p>
+                        <div class="flex">
+                            <button class="px-3 py-1 rounded-l border border-gray-300 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-50" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-800 hover:bg-gray-100">1</button>
+                            <button class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-500 hover:bg-gray-100">2</button>
+                            <button class="px-3 py-1 rounded-r border border-gray-300 bg-white text-gray-500 hover:bg-gray-100">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bookings Section -->
+            <div id="bookings-section" class="section-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold">All Bookings</h3>
+                    <button onclick="showAddBookingModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors flex items-center">
+                        <i class="fas fa-plus mr-2"></i> Add New Booking
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="p-4 flex justify-between items-center border-b">
+                        <div class="relative">
+                            <input type="text" placeholder="Search bookings..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                        <div class="flex">
+                            <select class="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent mr-2">
+                                <option>All Status</option>
+                                <option>Confirmed</option>
+                                <option>Pending</option>
+                                <option>Cancelled</option>
+                            </select>
+                            <input type="date" class="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-50 border-b">
+                                    <th class="py-3 px-4 text-left">ID</th>
+                                    <th class="py-3 px-4 text-left">Payment</th>
+                                    <th class="py-3 px-4 text-left">Ground</th>
+                                    <th class="py-3 px-4 text-left">Date</th>
+                                    <th class="py-3 px-4 text-left">Time</th>
+                                    <th class="py-3 px-4 text-left">Status</th>
+                                    <th class="py-3 px-4 text-left">Amount</th>
+                                    <th class="py-3 px-4 text-left">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="p-4 flex justify-between items-center border-t">
+                        <p class="text-sm text-gray-500">Showing 1 to 5 of 12 entries</p>
+                        <div class="flex">
+                            <button class="px-3 py-1 rounded-l border border-gray-300 bg-white text-gray-500 hover:bg-gray-100 disabled:opacity-50" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-800 hover:bg-gray-100">1</button>
+                            <button class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-500 hover:bg-gray-100">2</button>
+                            <button class="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-500 hover:bg-gray-100">3</button>
+                            <button class="px-3 py-1 rounded-r border border-gray-300 bg-white text-gray-500 hover:bg-gray-100">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Add Ground Modal -->
+    <div id="add-ground-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg w-full max-w-md">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Add New Ground</h3>
+                <button onclick="hideAddGroundModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <form action="src/backend/add_ground.php" method="POST" enctype="multipart/form-data" id="addGroundForm">
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-600 mb-1">Ground Name</label>
+                        <input name="name" type="text" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-600 mb-1">Location</label>
+                        <input name="location" type="text" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-600 mb-1">Rate per Hour ($)</label>
+                        <input name="price_per_hour" type="number" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-600 mb-1">Ground Picture</label>
+                        <input name="ground_picture" type="file" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-gray-600 mb-1">Full Address</label>
+                        <textarea name="address" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" rows="2" required></textarea>
+                    </div>
+                    <div class="p-4 border-t flex justify-end">
+                        <button onclick="hideAddGroundModal()" class="px-4 py-2 border rounded-lg mr-2 hover:bg-gray-100 transition-colors">Cancel</button>
+                        <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors" type="submit">Save Ground</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<!-- Edit Ground Modal -->
+<div id="edit-ground-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg w-full max-w-md">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 class="text-lg font-semibold">Edit Ground</h3>
+            <button onclick="hideEditGroundModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <form action="src/backend/update_ground.php" method="POST" enctype="multipart/form-data" id="editGroundForm">
+                <input type="hidden" name="ground_id" id="editGroundId"> <!-- hidden input to pass ground ID -->
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-600 mb-1">Ground Name</label>
+                    <input name="name" type="text" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-600 mb-1">Location</label>
+                    <input name="location" type="text" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-600 mb-1">Rate per Hour ($)</label>
+                    <input name="price_per_hour" type="number" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-600 mb-1">Ground Picture</label>
+                    <input name="ground_picture" type="file" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-600 mb-1">Full Address</label>
+                    <textarea name="address" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" rows="2" required></textarea>
+                </div>
+                <div class="p-4 border-t flex justify-end">
+                    <button onclick="hideEditGroundModal()" type="button" class="px-4 py-2 border rounded-lg mr-2 hover:bg-gray-100 transition-colors">Cancel</button>
+                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors" type="submit">Update Ground</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <!-- Delete Ground Confirmation Modal -->
+    <div id="delete-ground-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg w-full max-w-md">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Confirm Deletion</h3>
+                <button onclick="hideDeleteGroundModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <p class="text-gray-600 mb-4">Are you sure you want to delete this ground? This action cannot be undone.</p>
+                <div class="bg-red-50 border-l-4 border-red-500 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-500"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700">All future bookings for this ground will also be cancelled.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 border-t flex justify-end">
+                <button onclick="hideDeleteGroundModal()" class="px-4 py-2 border rounded-lg mr-2 hover:bg-gray-100 transition-colors">Cancel</button>
+                <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">Delete Ground</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Booking Modal -->
+<div id="edit-booking-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white rounded-lg w-full max-w-md">
+        <div class="p-4 border-b flex justify-between items-center">
+            <h3 class="text-lg font-semibold">Edit Booking</h3>
+            <button onclick="hideEditBookingModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-4">
+            <form>
+                <!-- Hidden booking ID -->
+                <input type="hidden" id="edit-booking-id">
+
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-600 mb-1">Payment Status</label>
+                    <select id="edit-payment-status" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                        <option>Pending</option>
+                        <option>Paid</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-600 mb-1">Ground</label>
+                    <input type="text" id="edit-ground" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600">
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1" required>Date</label>
+                        <input type="date" id="edit-date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Time</label>
+                        <select id="edit-time" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                            <option>08:00</option>
+                            <option>09:00</option>
+                            <option>17:00</option>
+                            <option>18:00</option>
+                            <option>19:00</option>
+                            <option>20:00</option>
+                            <option>21:00</option>
+                            <option>22:00</option>
+                            <option>23:00</option>
+                            <option>24:00</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-600 mb-1">Status</label>
+                    <select id="edit-status" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                        <option>Pending</option>
+                        <option>Confirmed</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-600 mb-1">Amount ($)</label>
+                    <input type="number" id="edit-amount" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600">
+                </div>
+                <div class="p-4 border-t flex justify-end">
+                    <button type="button" onclick="hideEditBookingModal()" class="px-4 py-2 border rounded-lg mr-2 hover:bg-gray-100 transition-colors">Cancel</button>
+                    <button type="button" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors" id="update-booking-button">Update Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Cancel Booking Confirmation Modal -->
+    <div id="cancel-booking-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg w-full max-w-md">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">Cancel Booking</h3>
+                <button onclick="hideCancelBookingModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <p class="text-gray-600 mb-4">Are you sure you want to cancel this booking?</p>
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-yellow-500"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700">If this booking was paid, you may need to process a refund.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm text-gray-600 mb-1">Reason for Cancellation</label>
+                    <select class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600">
+                        <option>Customer Request</option>
+                        <option>Ground Unavailable</option>
+                        <option>Weather Conditions</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-4 border-t flex justify-end">
+                <button onclick="hideCancelBookingModal()" class="px-4 py-2 border rounded-lg mr-2 hover:bg-gray-100 transition-colors">Don't Cancel</button>
+                <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">Confirm Cancellation</button>
+            </div>
+        </div>
+    </div>
+    <script src="src/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Footy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sigmar&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+
+  <style>
+    .font-sigmar { font-family: 'Sigmar', cursive; }
+    .font-ubuntu { font-family: 'Ubuntu', sans-serif; }
+    
+    /* Floating animation */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .float-animation {
+      animation: float 3s ease-in-out infinite;
+    }
+    
+    /* Pulse glow effect */
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(57, 255, 20, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(57, 255, 20, 0.6); }
+    }
+    
+    .pulse-glow {
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    /* Gradient text animation */
+    @keyframes gradient-shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    .animated-gradient {
+      background: linear-gradient(-45deg, #2563eb, #10b981, #059669, #1d4ed8);
+      background-size: 400% 400%;
+      animation: gradient-shift 3s ease infinite;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Hover scale effect */
+    .hover-scale {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .hover-scale:hover {
+      transform: scale(1.05) translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Parallax background */
+    .parallax-bg {
+      background-attachment: fixed;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+    
+    /* Glowing border */
+    .glow-border {
+      border: 2px solid transparent;
+      background: linear-gradient(white, white) padding-box,
+                  linear-gradient(45deg, #39ff14, #013220) border-box;
+    }
+    
+    /* Shimmer effect */
+    @keyframes shimmer {
+      0% { background-position: -200px 0; }
+      100% { background-position: calc(200px + 100%) 0; }
+    }
+    
+    .shimmer {
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+      );
+      background-size: 200px 100%;
+      animation: shimmer 2s infinite;
+    }
+    
+    /* Typewriter effect */
+    @keyframes typewriter {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    
+    .typewriter {
+      overflow: hidden;
+      border-right: 3px solid #FEFAE0;
+      white-space: nowrap;
+      animation: typewriter 3s steps(40) 1s both;
+    }
+    
+    /* Bouncing arrow */
+    @keyframes bounce-arrow {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      60% { transform: translateY(-5px); }
+    }
+    
+    .bounce-arrow {
+      animation: bounce-arrow 2s infinite;
+    }
+  </style>
+</head>
+
+<body class="overflow-x-hidden">
+
+  <header>
+    <div class="flex flex-wrap place-items-center">
+      <section class="absolute top-0 z-50 w-full">
+
+        <nav class="flex justify-around text-[#FEFAE0] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.9)] w-[98vw] backdrop-blur-md bg-black/20 rounded-lg m-2 transition-all duration-300 hover:bg-black/30">
+          <div class="px-5 xl:px-12 py-6 flex w-full items-center">
+            <a class="text-3xl font-heading font-sigmar text-[#d2742c] hover:scale-110 transition-transform duration-300 float-animation" href="#">
+              Footy.com
+            </a>
+
+            <ul class="md:flex px-4 mx-auto font-semibold font-heading space-x-12">
+              <li><a class="hover:text-[#DF6D14] transition-all duration-300 hover:scale-110 relative group" href="index.html">
+                Home
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#DF6D14] transition-all duration-300 group-hover:w-full"></span>
+              </a></li>
+              <li><a class="hover:text-gray-200 transition-all duration-300 hover:scale-110 relative group" href="grounds.html">
+                Ground's List
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-200 transition-all duration-300 group-hover:w-full"></span>
+              </a></li>
+              <li id="yourGroundLink" class="hidden"><a class="hover:text-gray-200 transition-all duration-300 hover:scale-110 relative group" href="admin.html">
+                Your Ground
+                <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-200 transition-all duration-300 group-hover:w-full"></span>
+              </a></li>
+            </ul>
+
+            <div id="signInArea" class="sign_in flex items-center px-4">
+              <!-- JS will inject login dropdown or welcome message here -->
+              <div class="bg-gradient-to-r from-[#013220] to-[#39ff14] text-white px-4 py-2 rounded-full hover:scale-105 transition-transform duration-300 cursor-pointer shimmer">
+                Sign In
+              </div>
+            </div>
+          </div>
+    </div>
+    </nav>
+    </section>
+    </div>
+
+    <div class="hero-section h-[700px] flex items-center justify-center text-center text-white relative overflow-hidden">
+      <!-- Background Image Layer with Blur -->
+      <div class="absolute inset-0 z-[-1] bg-cover bg-center brightness-50 bg-fixed parallax-bg" style="background-image: url('images/hero-picture2.jpg');">
+      </div>
+      <div class="absolute inset-0 z-[-1] backdrop-blur-sm"></div>
+      
+      <!-- Floating particles -->
+      <div class="absolute inset-0 z-0">
+        <div class="absolute top-20 left-10 w-4 h-4 bg-[#39ff14] rounded-full opacity-60 float-animation" style="animation-delay: 0s;"></div>
+        <div class="absolute top-40 right-20 w-3 h-3 bg-[#DF6D14] rounded-full opacity-60 float-animation" style="animation-delay: 1s;"></div>
+        <div class="absolute bottom-32 left-32 w-5 h-5 bg-[#FEFAE0] rounded-full opacity-40 float-animation" style="animation-delay: 2s;"></div>
+        <div class="absolute bottom-20 right-10 w-2 h-2 bg-[#39ff14] rounded-full opacity-60 float-animation" style="animation-delay: 0.5s;"></div>
+      </div>
+
+      <!-- Content (Kept on top) -->
+      <div class="relative z-10 top-[50px] mx-8 flex flex-col justify-center items-center">
+        <h6 class="text-[#FEFAE0] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] text-2xl animate-pulse">
+          Welcome to the world of Futsal!
+        </h6>
+        <h1 class="text-[#FEFAE0] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] text-7xl font-bold my-2 text-center typewriter font-ubuntu">
+          YOUR ULTIMATE <br> BOOKING APP.
+        </h1>
+        
+        <!-- Call to action button -->
+        <div class="mt-8">
+          <button class="bg-gradient-to-r from-[#013220] to-[#39ff14] text-white px-8 py-4 rounded-full text-xl font-semibold hover:scale-110 transition-all duration-300 pulse-glow shadow-2xl">
+            Start Booking Now
+          </button>
+        </div>
+        
+        <!-- Bouncing arrow -->
+        <div class="absolute bottom-10 bounce-arrow">
+          <svg class="w-8 h-8 text-[#FEFAE0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="bg-gradient-to-b from-green-900 to-blue-200 relative">
+    
+    <!-- Decorative elements -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+      <div class="absolute top-20 left-0 w-32 h-32 bg-[#39ff14] rounded-full opacity-10 blur-xl"></div>
+      <div class="absolute bottom-20 right-0 w-40 h-40 bg-[#DF6D14] rounded-full opacity-10 blur-xl"></div>
+    </div>
+
+    <div class="relative z-10 py-16">
+      <h1 id="animate-heading" class="font text-center text-5xl font-bold text-[#FEFAE0] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)] py-5 font-ubuntu opacity-0 -translate-x-full transition-all duration-1000 ease-out animated-gradient">
+        Popular Now!
+      </h1>
+      
+      <!-- Subtitle -->
+      <p class="text-center text-xl text-[#FEFAE0] opacity-80 mb-8 font-ubuntu">
+        Discover the most booked courts in your area
+      </p>
+    </div>
+
+    <div id="animate-in" class="flex flex-wrap justify-center gap-6 opacity-0 translate-x-full transition-all duration-1000 ease-out px-4 pb-16">
+      
+      <!-- Court Card 1 -->
+      <div class="boxcontent w-full sm:w-[45%] lg:w-[23%] bg-white m-5 shadow-2xl rounded-xl text-center flex flex-col items-center justify-center hover-scale glow-border relative overflow-hidden group">
+        <!-- Shimmer overlay -->
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+        
+        <h1 class="font-sigmar text-xl mt-4 bg-gradient-to-r from-blue-600 to-green-500 inline-block text-transparent bg-clip-text relative z-10">
+          Executive Court
+        </h1>
+        
+        <!-- Rating stars -->
+        <div class="flex items-center mb-2">
+          <div class="flex text-yellow-400">
+            ★★★★★
+          </div>
+          <span class="text-gray-600 text-sm ml-2">(4.8)</span>
+        </div>
+        
+        <div class="box-img p-2 relative">
+          <img src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Executive Court"
+            class="rounded-md border-2 border-solid border-black w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105">
+          
+          <!-- Overlay info -->
+          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md flex items-center justify-center">
+            <div class="text-white text-center">
+              <p class="font-semibold">Premium Quality</p>
+              <p class="text-sm">Available 24/7</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Price -->
+        <div class="text-center mb-3">
+          <span class="text-2xl font-bold text-green-600">$25</span>
+          <span class="text-gray-500">/hour</span>
+        </div>
+        
+        <button type="button"
+          class="text-white bg-gradient-to-br from-[#013220] to-[#39ff14] hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-4 transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden group">
+          <span class="relative z-10">Book Now!</span>
+          <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+        </button>
+      </div>
+
+      <!-- Court Card 2 -->
+      <div class="boxcontent w-full sm:w-[45%] lg:w-[23%] bg-white m-5 shadow-2xl rounded-xl text-center flex flex-col items-center justify-center hover-scale glow-border relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+        
+        <h1 class="font-sigmar text-xl mt-4 bg-gradient-to-r from-blue-600 to-green-500 inline-block text-transparent bg-clip-text relative z-10">
+          Champions Arena
+        </h1>
+        
+        <div class="flex items-center mb-2">
+          <div class="flex text-yellow-400">
+            ★★★★☆
+          </div>
+          <span class="text-gray-600 text-sm ml-2">(4.5)</span>
+        </div>
+        
+        <div class="box-img p-2 relative">
+          <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Champions Arena"
+            class="rounded-md border-2 border-solid border-black w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105">
+          
+          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md flex items-center justify-center">
+            <div class="text-white text-center">
+              <p class="font-semibold">Tournament Ready</p>
+              <p class="text-sm">Professional Grade</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-center mb-3">
+          <span class="text-2xl font-bold text-green-600">$30</span>
+          <span class="text-gray-500">/hour</span>
+        </div>
+        
+        <button type="button"
+          class="text-white bg-gradient-to-br from-[#013220] to-[#39ff14] hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-4 transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden group">
+          <span class="relative z-10">Book Now!</span>
+          <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+        </button>
+      </div>
+
+      <!-- Court Card 3 -->
+      <div class="boxcontent w-full sm:w-[45%] lg:w-[23%] bg-white m-5 shadow-2xl rounded-xl text-center flex flex-col items-center justify-center hover-scale glow-border relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+        
+        <h1 class="font-sigmar text-xl mt-4 bg-gradient-to-r from-blue-600 to-green-500 inline-block text-transparent bg-clip-text relative z-10">
+          Victory Field
+        </h1>
+        
+        <div class="flex items-center mb-2">
+          <div class="flex text-yellow-400">
+            ★★★★★
+          </div>
+          <span class="text-gray-600 text-sm ml-2">(4.9)</span>
+        </div>
+        
+        <div class="box-img p-2 relative">
+          <img src="https://images.unsplash.com/photo-1459865264687-595d652de67e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Victory Field"
+            class="rounded-md border-2 border-solid border-black w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105">
+          
+          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md flex items-center justify-center">
+            <div class="text-white text-center">
+              <p class="font-semibold">Elite Experience</p>
+              <p class="text-sm">Top Rated</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-center mb-3">
+          <span class="text-2xl font-bold text-green-600">$35</span>
+          <span class="text-gray-500">/hour</span>
+        </div>
+        
+        <button type="button"
+          class="text-white bg-gradient-to-br from-[#013220] to-[#39ff14] hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-4 transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden group">
+          <span class="relative z-10">Book Now!</span>
+          <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+        </button>
+      </div>
+
+      <!-- Court Card 4 -->
+      <div class="boxcontent w-full sm:w-[45%] lg:w-[23%] bg-white m-5 shadow-2xl rounded-xl text-center flex flex-col items-center justify-center hover-scale glow-border relative overflow-hidden group">
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+        
+        <h1 class="font-sigmar text-xl mt-4 bg-gradient-to-r from-blue-600 to-green-500 inline-block text-transparent bg-clip-text relative z-10">
+          Dream Court
+        </h1>
+        
+        <div class="flex items-center mb-2">
+          <div class="flex text-yellow-400">
+            ★★★★☆
+          </div>
+          <span class="text-gray-600 text-sm ml-2">(4.6)</span>
+        </div>
+        
+        <div class="box-img p-2 relative">
+          <img src="https://images.unsplash.com/photo-1577223625816-7546f13df25d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Dream Court"
+            class="rounded-md border-2 border-solid border-black w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105">
+          
+          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md flex items-center justify-center">
+            <div class="text-white text-center">
+              <p class="font-semibold">Modern Facility</p>
+              <p class="text-sm">Great Value</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-center mb-3">
+          <span class="text-2xl font-bold text-green-600">$20</span>
+          <span class="text-gray-500">/hour</span>
+        </div>
+        
+        <button type="button"
+          class="text-white bg-gradient-to-br from-[#013220] to-[#39ff14] hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-4 transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden group">
+          <span class="relative z-10">Book Now!</span>
+          <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-gradient-to-b from-blue-200 to-white shadow-sm relative">
+    <div class="w-full max-w-screen-xl mx-auto p-4 md:py-8">
+        <div class="sm:flex sm:items-center sm:justify-between">
+          <a class="text-3xl font-heading font-sigmar text-[#d2742c] drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.9)] hover:scale-110 transition-transform duration-300 float-animation" href="#">
+            Footy.com
+          </a>
+            <ul class="flex flex-wrap items-center mb-6 text-sm font-medium text-gray-500 sm:mb-0 dark:text-gray-400">
+                <li>
+                    <a href="#" class="hover:underline me-4 md:me-6 hover:text-[#d2742c] transition-colors duration-300">About</a>
+                </li>
+                <li>
+                    <a href="#" class="hover:underline me-4 md:me-6 hover:text-[#d2742c] transition-colors duration-300">Privacy Policy</a>
+                </li>
+                <li>
+                    <a href="#" class="hover:underline me-4 md:me-6 hover:text-[#d2742c] transition-colors duration-300">Licensing</a>
+                </li>
+                <li>
+                    <a href="#" class="hover:underline hover:text-[#d2742c] transition-colors duration-300">Contact</a>
+                </li>
+            </ul>
+        </div>
+        <hr class="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8" />
+        <span class="block text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2023 <a href="https://flowbite.com/" class="hover:underline hover:text-[#d2742c] transition-colors duration-300">Flowbite™</a>. All Rights Reserved.</span>
+    </div>
+</footer>
+    <script src="src/js/main.js"></script>
+  <script>
+    // Enhanced animation triggers
+    document.addEventListener('DOMContentLoaded', function() {
+      // Trigger animations when elements come into view
+      const animateHeading = document.getElementById('animate-heading');
+      const animateIn = document.getElementById('animate-in');
+      
+      setTimeout(() => {
+        animateHeading.classList.remove('opacity-0', '-translate-x-full');
+        animateHeading.classList.add('opacity-100', 'translate-x-0');
+      }, 500);
+      
+      setTimeout(() => {
+        animateIn.classList.remove('opacity-0', 'translate-x-full');
+        animateIn.classList.add('opacity-100', 'translate-x-0');
+      }, 1000);
+      
+      // Add hover effects to navigation
+      const navLinks = document.querySelectorAll('nav a');
+      navLinks.forEach(link => {
+        link.addEventListener('mouseenter', function() {
+          this.style.transform = 'scale(1.1)';
+        });
+        
+        link.addEventListener('mouseleave', function() {
+          this.style.transform = 'scale(1)';
+        });
+      });
+      
+      // Add parallax effect to hero background
+      window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const rate = scrolled * -0.5;
+        const heroSection = document.querySelector('.hero-section .parallax-bg');
+        if (heroSection) {
+          heroSection.style.transform = `translateY(${rate}px)`;
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
