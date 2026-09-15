@@ -3,7 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, CalendarCheck, Users, TrendingUp, Settings, Camera } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutGrid, CalendarCheck, TrendingUp, Settings, Camera } from 'lucide-react';
 import { cn, getCourtPhotoUrl } from '@/lib/utils';
 import { Logo } from '@/components/layout/Logo';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -19,7 +20,6 @@ interface SidebarProps {
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutGrid },
   { href: '/dashboard/bookings', label: 'Bookings', icon: CalendarCheck, badgeKey: 'pending' as const },
-  { href: '/dashboard/players', label: 'Players', icon: Users },
   { href: '/dashboard/analytics', label: 'Analytics', icon: TrendingUp },
   { href: '/dashboard/court-settings', label: 'Court Settings', icon: Settings },
 ];
@@ -27,8 +27,10 @@ const navItems = [
 export function Sidebar({ profile, primaryCourt, pendingCount }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   async function handleLogout() {
+    setLoggingOut(true);
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push('/');
@@ -105,14 +107,15 @@ export function Sidebar({ profile, primaryCourt, pendingCount }: SidebarProps) {
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-2.5 px-0.5 py-1 text-left"
+          disabled={loggingOut}
+          className="flex w-full items-center gap-2.5 px-0.5 py-1 text-left disabled:opacity-50"
         >
           <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#15803D] font-heading text-[11px] font-extrabold text-primary-fg">
             {initials}
           </span>
           <span className="min-w-0">
             <span className="block truncate text-xs font-semibold text-fg">{profile.full_name}</span>
-            <span className="block text-[10px] text-primary">Court Owner</span>
+            <span className="block text-[10px] text-primary">{loggingOut ? 'Logging out…' : 'Court Owner'}</span>
           </span>
         </button>
       </div>

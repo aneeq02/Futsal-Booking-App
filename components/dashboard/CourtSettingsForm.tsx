@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Input, Label, Select, Textarea } from '@/components/ui/Input';
+import { Input, Label, Select } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/client';
-import { KARACHI_AREAS, SURFACE_TYPES } from '@/lib/constants';
-import type { Court, SurfaceType } from '@/types/database.types';
+import { KARACHI_AREAS, COURT_FORMATS } from '@/lib/constants';
+import type { Court, CourtFormat } from '@/types/database.types';
 
 interface Props {
   ownerId: string;
@@ -21,11 +21,9 @@ export function CourtSettingsForm({ ownerId, court, onSaved }: Props) {
   const [name, setName] = useState(court?.name ?? '');
   const [area, setArea] = useState(court?.area ?? KARACHI_AREAS[0]);
   const [address, setAddress] = useState(court?.address ?? '');
-  const [description, setDescription] = useState(court?.description ?? '');
   const [pricePerHour, setPricePerHour] = useState(String(court?.price_per_hour ?? ''));
-  const [surfaceType, setSurfaceType] = useState<SurfaceType>(court?.surface_type ?? 'artificial_turf');
-  const [capacity, setCapacity] = useState(String(court?.capacity ?? 10));
-  const [tagline, setTagline] = useState(court?.tagline ?? '');
+  const [format, setFormat] = useState<CourtFormat>(court?.format ?? '7v7');
+  const [allowsHalfCourt, setAllowsHalfCourt] = useState(court?.allows_half_court ?? false);
   const [isActive, setIsActive] = useState(court?.is_active ?? true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,11 +43,9 @@ export function CourtSettingsForm({ ownerId, court, onSaved }: Props) {
       name,
       area,
       address,
-      description: description || null,
       price_per_hour: Number(pricePerHour),
-      surface_type: surfaceType,
-      capacity: Number(capacity),
-      tagline: tagline || null,
+      format,
+      allows_half_court: allowsHalfCourt,
       is_active: isActive,
     };
 
@@ -101,42 +97,32 @@ export function CourtSettingsForm({ ownerId, court, onSaved }: Props) {
         <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, landmark" />
       </div>
 
-      <div>
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Floodlit turf, parking available…" />
-      </div>
-
-      <div>
-        <Label htmlFor="tagline">Player quote (shown on your card)</Label>
-        <Input
-          id="tagline"
-          value={tagline}
-          onChange={(e) => setTagline(e.target.value)}
-          placeholder={'"Always well maintained. Go-to for our weekly game."'}
-          maxLength={120}
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="price">Price / hour (₨)</Label>
           <Input id="price" type="number" min={0} value={pricePerHour} onChange={(e) => setPricePerHour(e.target.value)} />
         </div>
         <div>
-          <Label htmlFor="surface">Surface</Label>
-          <Select id="surface" value={surfaceType} onChange={(e) => setSurfaceType(e.target.value as SurfaceType)}>
-            {SURFACE_TYPES.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
+          <Label htmlFor="format">Format</Label>
+          <Select id="format" value={format} onChange={(e) => setFormat(e.target.value as CourtFormat)}>
+            {COURT_FORMATS.map((f) => (
+              <option key={f} value={f}>
+                {f}
               </option>
             ))}
           </Select>
         </div>
-        <div>
-          <Label htmlFor="capacity">Capacity</Label>
-          <Input id="capacity" type="number" min={1} value={capacity} onChange={(e) => setCapacity(e.target.value)} />
-        </div>
       </div>
+
+      <label className="flex items-center gap-2 text-sm text-fg">
+        <input
+          type="checkbox"
+          checked={allowsHalfCourt}
+          onChange={(e) => setAllowsHalfCourt(e.target.checked)}
+          className="h-4 w-4 rounded border-border text-primary"
+        />
+        Players can book half the court (at half price)
+      </label>
 
       <label className="flex items-center gap-2 text-sm text-fg">
         <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4 rounded border-border text-primary" />

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { createClient } from '@/lib/supabase/client';
 import { sendBookingConfirmationSms } from '@/lib/notifications';
 import { cn, formatDateLabel, formatPKR, formatTime, addHours, getCourtPhotoUrl } from '@/lib/utils';
-import type { Court, CourtPhoto, Profile, TimeSlot } from '@/types/database.types';
+import type { Court, CourtPhoto, CourtPortion, Profile, TimeSlot } from '@/types/database.types';
 
 const DURATIONS = [1, 2, 3];
 const PAYMENT_METHODS = [
@@ -36,6 +36,7 @@ export function BookingFlow({
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [duration, setDuration] = useState(1);
+  const [portion, setPortion] = useState<CourtPortion>('full');
   const [paymentMethod, setPaymentMethod] = useState<(typeof PAYMENT_METHODS)[number]['id']>('jazzcash');
   const [promoCode, setPromoCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -59,7 +60,8 @@ export function BookingFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, court.id]);
 
-  const total = court.price_per_hour * duration;
+  const rate = court.price_per_hour * (portion === 'half' ? 0.5 : 1);
+  const total = rate * duration;
   const photoUrl = primaryPhoto ? getCourtPhotoUrl(primaryPhoto.storage_path) : null;
 
   async function handleConfirm() {
@@ -71,6 +73,7 @@ export function BookingFlow({
       p_slot_id: selectedSlot.id,
       p_duration_hours: duration,
       p_payment_method: paymentMethod,
+      p_court_portion: portion,
     });
 
     setSubmitting(false);
@@ -177,6 +180,27 @@ export function BookingFlow({
             </p>
           )}
         </section>
+
+        {court.allows_half_court && (
+          <section className="mt-6">
+            <h2 className="mb-2.5 font-heading text-xs font-bold uppercase tracking-wide text-muted">Court</h2>
+            <div className="flex gap-2">
+              {(['full', 'half'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPortion(p)}
+                  className={cn(
+                    'rounded-[9px] border px-6 py-2.5 font-heading text-[13px] font-semibold capitalize transition-colors',
+                    portion === p ? 'border-primary bg-primary text-primary-fg' : 'border-border text-muted hover:border-primary/40'
+                  )}
+                >
+                  {p} Court
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Summary panel */}
@@ -201,8 +225,9 @@ export function BookingFlow({
 
         <div className="mb-[18px] flex flex-col gap-3">
           <Row label="Court" value={court.name} />
+          {court.allows_half_court && <Row label="Booking" value={portion === 'half' ? 'Half Court' : 'Full Court'} />}
           <Row label="Duration" value={`${duration} Hour${duration > 1 ? 's' : ''}`} />
-          <Row label="Rate" value={`${formatPKR(court.price_per_hour)}/hr`} />
+          <Row label="Rate" value={`${formatPKR(rate)}/hr`} />
         </div>
 
         <div className="mb-[18px] h-px bg-border-card" />

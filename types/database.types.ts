@@ -5,7 +5,8 @@ export type PaymentStatus = 'pending' | 'confirmed';
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
 export type SubscriptionPlan = 'basic' | 'pro' | 'premium';
 export type SubscriptionStatus = 'active' | 'past_due' | 'cancelled';
-export type SurfaceType = 'artificial_turf' | 'wooden' | 'concrete' | 'rubber';
+export type CourtFormat = '5v5' | '6v6' | '7v7' | '8v8';
+export type CourtPortion = 'full' | 'half';
 
 export interface Database {
   public: {
@@ -41,13 +42,11 @@ export interface Database {
           name: string;
           area: string;
           address: string;
-          description: string | null;
           price_per_hour: number;
-          surface_type: SurfaceType;
-          capacity: number;
+          format: CourtFormat;
+          allows_half_court: boolean;
           is_active: boolean;
           rating: number | null;
-          tagline: string | null;
           created_at: string;
         };
         Insert: {
@@ -56,13 +55,11 @@ export interface Database {
           name: string;
           area: string;
           address: string;
-          description?: string | null;
           price_per_hour: number;
-          surface_type?: SurfaceType;
-          capacity?: number;
+          format?: CourtFormat;
+          allows_half_court?: boolean;
           is_active?: boolean;
           rating?: number | null;
-          tagline?: string | null;
           created_at?: string;
         };
         Update: {
@@ -71,13 +68,11 @@ export interface Database {
           name?: string;
           area?: string;
           address?: string;
-          description?: string | null;
           price_per_hour?: number;
-          surface_type?: SurfaceType;
-          capacity?: number;
+          format?: CourtFormat;
+          allows_half_court?: boolean;
           is_active?: boolean;
           rating?: number | null;
-          tagline?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -161,6 +156,7 @@ export interface Database {
           slot_id: string;
           court_id: string;
           duration_hours: number;
+          court_portion: CourtPortion;
           total_amount: number;
           payment_method: PaymentMethod;
           payment_status: PaymentStatus;
@@ -173,6 +169,7 @@ export interface Database {
           slot_id: string;
           court_id: string;
           duration_hours?: number;
+          court_portion?: CourtPortion;
           total_amount: number;
           payment_method: PaymentMethod;
           payment_status?: PaymentStatus;
@@ -185,6 +182,7 @@ export interface Database {
           slot_id?: string;
           court_id?: string;
           duration_hours?: number;
+          court_portion?: CourtPortion;
           total_amount?: number;
           payment_method?: PaymentMethod;
           payment_status?: PaymentStatus;
@@ -254,6 +252,7 @@ export interface Database {
           p_slot_id: string;
           p_duration_hours: number;
           p_payment_method: PaymentMethod;
+          p_court_portion?: CourtPortion;
         };
         Returns: Database['public']['Tables']['bookings']['Row'];
       };

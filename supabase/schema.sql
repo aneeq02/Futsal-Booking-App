@@ -15,26 +15,32 @@ create table if not exists public.profiles (
 );
 
 create table if not exists public.courts (
-  id              uuid primary key default gen_random_uuid(),
-  owner_id        uuid not null references public.profiles (id) on delete cascade,
-  name            text not null,
-  area            text not null,
-  address         text not null,
-  description     text,
-  price_per_hour  numeric(10, 2) not null check (price_per_hour > 0),
-  surface_type    text not null default 'artificial_turf'
-                    check (surface_type in ('artificial_turf', 'wooden', 'concrete', 'rubber')),
-  capacity        integer not null default 10 check (capacity > 0),
-  is_active       boolean not null default true,
-  rating          numeric(2, 1) check (rating >= 0 and rating <= 5),
-  tagline         text,
-  created_at      timestamptz not null default now()
+  id                 uuid primary key default gen_random_uuid(),
+  owner_id           uuid not null references public.profiles (id) on delete cascade,
+  name               text not null,
+  area               text not null,
+  address            text not null,
+  price_per_hour     numeric(10, 2) not null check (price_per_hour > 0),
+  format             text not null default '7v7' check (format in ('5v5', '6v6', '7v7', '8v8')),
+  allows_half_court  boolean not null default false,
+  is_active          boolean not null default true,
+  rating             numeric(2, 1) check (rating >= 0 and rating <= 5),
+  created_at         timestamptz not null default now()
 );
 
--- Safe to re-run: adds rating/tagline to a courts table created before these
--- columns existed, without touching anything else.
+-- Safe to re-run against a courts table created before this shape existed:
+-- adds the current columns and drops the ones that are no longer part of
+-- the product (description, surface_type, tagline, capacity) without
+-- touching anything else.
 alter table public.courts add column if not exists rating numeric(2, 1);
-alter table public.courts add column if not exists tagline text;
+alter table public.courts add column if not exists format text not null default '7v7';
+alter table public.courts add column if not exists allows_half_court boolean not null default false;
+alter table public.courts drop column if exists description;
+alter table public.courts drop column if exists surface_type;
+alter table public.courts drop column if exists tagline;
+alter table public.courts drop column if exists capacity;
+alter table public.courts drop constraint if exists courts_format_check;
+alter table public.courts add constraint courts_format_check check (format in ('5v5', '6v6', '7v7', '8v8'));
 
 create table if not exists public.court_photos (
   id            uuid primary key default gen_random_uuid(),
@@ -61,12 +67,17 @@ create table if not exists public.bookings (
   slot_id          uuid not null references public.time_slots (id) on delete cascade,
   court_id         uuid not null references public.courts (id) on delete cascade,
   duration_hours   integer not null default 1 check (duration_hours > 0),
+  court_portion    text not null default 'full' check (court_portion in ('full', 'half')),
   total_amount     numeric(10, 2) not null check (total_amount >= 0),
   payment_method   text not null check (payment_method in ('jazzcash', 'easypaisa', 'cash')),
   payment_status   text not null default 'pending' check (payment_status in ('pending', 'confirmed')),
   status           text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled')),
   created_at       timestamptz not null default now()
 );
+
+alter table public.bookings add column if not exists court_portion text not null default 'full';
+alter table public.bookings drop constraint if exists bookings_court_portion_check;
+alter table public.bookings add constraint bookings_court_portion_check check (court_portion in ('full', 'half'));
 
 create table if not exists public.subscriptions (
   id          uuid primary key default gen_random_uuid(),
@@ -122,10 +133,17 @@ create trigger on_auth_user_created
 -- and writes the slot + booking rows in one transaction.
 -- =========================================================
 
+-- Postgres treats a changed parameter list as a distinct overload rather
+-- than replacing the function in place, so the old 3-arg signature (from
+-- before p_court_portion existed) is dropped explicitly to avoid ending up
+-- with two ambiguous create_booking functions after a re-run.
+drop function if exists public.create_booking(uuid, integer, text);
+
 create or replace function public.create_booking(
   p_slot_id uuid,
   p_duration_hours integer,
-  p_payment_method text
+  p_payment_method text,
+  p_court_portion text default 'full'
 )
 returns public.bookings
 language plpgsql
@@ -139,7 +157,12 @@ declare
   v_next     public.time_slots;
   v_cursor   time;
   i          integer;
+  v_rate     numeric(10, 2);
 begin
+  if p_court_portion not in ('full', 'half') then
+    raise exception 'Invalid court portion';
+  end if;
+
   select * into v_slot from public.time_slots where id = p_slot_id for update;
 
   if not found then
@@ -151,6 +174,12 @@ begin
   end if;
 
   select * into v_court from public.courts where id = v_slot.court_id;
+
+  if p_court_portion = 'half' and not v_court.allows_half_court then
+    raise exception 'This court does not offer half-court bookings';
+  end if;
+
+  v_rate := v_court.price_per_hour * (case when p_court_portion = 'half' then 0.5 else 1 end);
 
   -- A multi-hour booking must claim N contiguous slot rows, not just the
   -- first one — otherwise the later hours stay "available" and can be
@@ -173,13 +202,14 @@ begin
 
   update public.time_slots set status = 'booked' where id = any(v_slot_ids);
 
-  insert into public.bookings (player_id, slot_id, court_id, duration_hours, total_amount, payment_method, payment_status, status)
+  insert into public.bookings (player_id, slot_id, court_id, duration_hours, court_portion, total_amount, payment_method, payment_status, status)
   values (
     auth.uid(),
     p_slot_id,
     v_slot.court_id,
     p_duration_hours,
-    v_court.price_per_hour * p_duration_hours,
+    p_court_portion,
+    v_rate * p_duration_hours,
     p_payment_method,
     case when p_payment_method = 'cash' then 'pending' else 'confirmed' end,
     'confirmed'

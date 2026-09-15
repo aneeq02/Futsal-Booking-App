@@ -1,9 +1,4 @@
-export const SURFACE_TYPES = [
-  { value: 'artificial_turf', label: 'Artificial Turf' },
-  { value: 'wooden', label: 'Wooden' },
-  { value: 'concrete', label: 'Concrete' },
-  { value: 'rubber', label: 'Rubber' },
-] as const;
+export const COURT_FORMATS = ['5v5', '6v6', '7v7', '8v8'] as const;
 
 export const KARACHI_AREAS = [
   'DHA',

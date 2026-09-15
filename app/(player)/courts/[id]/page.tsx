@@ -1,37 +1,21 @@
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { MapPin, Users, Layers, Star } from 'lucide-react';
+import { MapPin, Users, Star } from 'lucide-react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { PhotoPlaceholder } from '@/components/courts/PhotoPlaceholder';
+import { PhotoGallery } from '@/components/courts/PhotoGallery';
 import { ButtonLink } from '@/components/ui/Button';
 import { getCourtById } from '@/lib/supabase/queries';
-import { formatPKR, getCourtPhotoUrl } from '@/lib/utils';
-
-const SURFACE_LABELS: Record<string, string> = {
-  artificial_turf: 'Artificial Turf',
-  wooden: 'Wooden',
-  concrete: 'Concrete',
-  rubber: 'Rubber',
-};
+import { formatPKR } from '@/lib/utils';
 
 export default async function CourtDetailPage({ params }: { params: { id: string } }) {
   const court = await getCourtById(params.id);
   if (!court) notFound();
 
-  const photoUrl = court.primaryPhoto ? getCourtPhotoUrl(court.primaryPhoto.storage_path) : null;
-
   return (
     <>
       <Navbar />
       <div className="mx-auto max-w-4xl px-6 py-10 sm:px-10">
-        <div className="relative h-64 w-full overflow-hidden rounded-2xl sm:h-96">
-          {photoUrl ? (
-            <Image src={photoUrl} alt={court.name} fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
-          ) : (
-            <PhotoPlaceholder className="h-full w-full" />
-          )}
-        </div>
+        <PhotoGallery photos={court.photos} courtName={court.name} />
 
         <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -51,17 +35,11 @@ export default async function CourtDetailPage({ params }: { params: { id: string
 
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted">
               <span className="flex items-center gap-1.5">
-                <Layers size={16} />
-                {SURFACE_LABELS[court.surface_type] ?? court.surface_type}
-              </span>
-              <span className="flex items-center gap-1.5">
                 <Users size={16} />
-                Up to {court.capacity} players
+                {court.format}
               </span>
+              {court.allows_half_court && <span className="text-sm text-primary">Half-court bookings available</span>}
             </div>
-
-            {court.tagline && <p className="mt-4 text-sm italic text-faint">&ldquo;{court.tagline}&rdquo;</p>}
-            {court.description && <p className="mt-5 max-w-xl text-sm leading-relaxed text-fg">{court.description}</p>}
           </div>
 
           <div className="shrink-0 rounded-2xl border border-border-card bg-surface p-5 sm:w-56">

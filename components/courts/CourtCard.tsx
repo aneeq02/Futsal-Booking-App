@@ -55,7 +55,10 @@ export function CourtCard({ court, primaryPhoto, availableSlots, seed = 0, varia
               )}
             </div>
             <div className="mb-3 truncate text-xs text-muted">{court.area}</div>
-            {court.tagline && <div className="text-xs italic text-faint line-clamp-2">&ldquo;{court.tagline}&rdquo;</div>}
+            <div className="text-xs text-faint">
+              {court.format}
+              {court.allows_half_court && ' · half-court available'}
+            </div>
           </div>
           <div className="mt-3.5 flex items-center justify-between">
             <div>

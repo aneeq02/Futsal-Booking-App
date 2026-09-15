@@ -1,12 +1,14 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { ButtonLink } from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/client';
 import type { Profile } from '@/types/database.types';
 
 export function NavAuth({ profile }: { profile: Profile | null }) {
   const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   if (!profile) {
     return (
@@ -22,6 +24,7 @@ export function NavAuth({ profile }: { profile: Profile | null }) {
   }
 
   async function handleLogout() {
+    setLoggingOut(true);
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push('/');
@@ -34,9 +37,10 @@ export function NavAuth({ profile }: { profile: Profile | null }) {
       <button
         type="button"
         onClick={handleLogout}
-        className="text-sm font-medium text-muted hover:text-fg"
+        disabled={loggingOut}
+        className="text-sm font-medium text-muted hover:text-fg disabled:opacity-50"
       >
-        Logout
+        {loggingOut ? 'Logging out…' : 'Logout'}
       </button>
     </div>
   );

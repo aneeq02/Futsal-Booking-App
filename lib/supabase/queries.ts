@@ -74,7 +74,9 @@ export async function getAreaCounts(): Promise<Record<string, number>> {
   return counts;
 }
 
-export async function getCourtById(id: string): Promise<CourtWithPrimaryPhoto | null> {
+export async function getCourtById(
+  id: string
+): Promise<(CourtWithPrimaryPhoto & { photos: CourtPhoto[] }) | null> {
   const supabase = createClient();
   const { data: court } = await supabase.from('courts').select('*').eq('id', id).single();
   if (!court) return null;
@@ -85,7 +87,7 @@ export async function getCourtById(id: string): Promise<CourtWithPrimaryPhoto | 
     .eq('court_id', id)
     .order('is_primary', { ascending: false });
 
-  return { ...court, primaryPhoto: photos?.[0] ?? null };
+  return { ...court, primaryPhoto: photos?.[0] ?? null, photos: photos ?? [] };
 }
 
 export async function getCourtSlotsByDate(courtId: string, date: string) {

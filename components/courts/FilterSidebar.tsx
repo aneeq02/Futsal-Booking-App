@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTransition } from 'react';
 import { Check } from 'lucide-react';
 import { KARACHI_AREAS } from '@/lib/constants';
 import { cn, formatPKR } from '@/lib/utils';
@@ -16,6 +17,7 @@ const RATING_OPTIONS = [
 export function FilterSidebar({ areaCounts, total }: { areaCounts: Record<string, number>; total: number }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const selectedAreas = searchParams.get('areas')?.split(',').filter(Boolean) ?? [];
   const minPrice = Number(searchParams.get('minPrice') ?? PRICE_MIN);
@@ -25,7 +27,11 @@ export function FilterSidebar({ areaCounts, total }: { areaCounts: Record<string
   function updateParams(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
     mutate(params);
-    router.push(`/courts?${params.toString()}`);
+    // Wrapped in a transition so this in-page refinement dims the results
+    // instead of triggering the full-page loading skeleton on every click.
+    startTransition(() => {
+      router.push(`/courts?${params.toString()}`);
+    });
   }
 
   function toggleArea(area: string) {
@@ -52,7 +58,12 @@ export function FilterSidebar({ areaCounts, total }: { areaCounts: Record<string
   }
 
   return (
-    <aside className="w-full shrink-0 overflow-y-auto border-border-subtle bg-surface-3 px-5 py-6 sm:w-[264px] sm:border-r dark:bg-bg">
+    <aside
+      className={cn(
+        'w-full shrink-0 overflow-y-auto border-border-subtle bg-surface-3 px-5 py-6 transition-opacity sm:w-[264px] sm:border-r dark:bg-bg',
+        isPending && 'opacity-60'
+      )}
+    >
       <div className="mb-5 text-xs text-muted">
         Showing <strong className="text-fg">{total} courts</strong> across Karachi
       </div>

@@ -16,6 +16,7 @@ export default async function DashboardBookingsPage() {
     date: b.slot?.date ?? '',
     startTime: b.slot?.start_time ?? '00:00',
     durationHours: b.duration_hours,
+    courtPortion: b.court_portion as 'full' | 'half',
     amount: b.total_amount,
     paymentMethod: b.payment_method as PaymentMethod,
     status: b.status as BookingStatus,

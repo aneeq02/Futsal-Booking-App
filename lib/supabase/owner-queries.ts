@@ -5,6 +5,7 @@ export interface OwnerBookingRow {
   id: string;
   court_id: string;
   duration_hours: number;
+  court_portion: string;
   total_amount: number;
   payment_method: string;
   payment_status: string;
@@ -49,7 +50,7 @@ export async function getOwnerBookings(ownerId: string): Promise<OwnerBookingRow
   const { data } = await supabase
     .from('bookings')
     .select(
-      'id, court_id, duration_hours, total_amount, payment_method, payment_status, status, created_at, slot:time_slots(date, start_time), court:courts(name), player:profiles(full_name, phone)'
+      'id, court_id, duration_hours, court_portion, total_amount, payment_method, payment_status, status, created_at, slot:time_slots(date, start_time), court:courts(name), player:profiles(full_name, phone)'
     )
     .in('court_id', courtIds)
     .order('created_at', { ascending: false });

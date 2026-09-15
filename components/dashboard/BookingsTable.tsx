@@ -10,6 +10,7 @@ export interface BookingRow {
   date: string;
   startTime: string;
   durationHours: number;
+  courtPortion: 'full' | 'half';
   amount: number;
   paymentMethod: PaymentMethod;
   status: BookingStatus;
@@ -45,6 +46,7 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
         <thead>
           <tr className="bg-surface-3">
             <Th>Player</Th>
+            <Th>Court</Th>
             <Th>Slot</Th>
             <Th>Amount</Th>
             <Th>Payment</Th>
@@ -78,8 +80,10 @@ export function BookingsTable({ bookings }: { bookings: BookingRow[] }) {
                     </div>
                   </div>
                 </td>
+                <td className="px-3 py-[11px] text-xs text-fg">{b.courtName}</td>
                 <td className="px-3 py-[11px] text-xs text-secondary">
                   {formatDateLabel(b.date)} · {formatTime(b.startTime)}–{formatTime(endTime)}
+                  {b.courtPortion === 'half' && <span className="ml-1.5 text-[10px] text-faint">(half court)</span>}
                 </td>
                 <td className="px-3 py-[11px] font-heading text-[13px] font-semibold text-fg">{formatPKR(b.amount)}</td>
                 <td className="px-3 py-[11px] text-xs text-muted">{PAYMENT_LABELS[b.paymentMethod]}</td>
