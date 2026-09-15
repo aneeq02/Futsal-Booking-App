@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Night Pitch — light */
+  --color-bg: 244 248 244;
+  --color-surface: 255 255 255;
+  --color-surface-2: 240 245 240;
+  --color-surface-3: 248 250 248;
+  --color-border: 213 224 214;
+  --color-border-card: 224 235 225;
+  --color-border-subtle: 232 238 232;
+  --color-fg: 10 26 13;
+  --color-muted: 74 100 80;
+  --color-faint: 154 176 158;
+  --color-secondary: 74 100 80;
+}
+
+.dark {
+  /* Night Pitch — dark */
+  --color-bg: 6 12 8;
+  --color-surface: 13 22 16;
+  --color-surface-2: 10 19 12;
+  --color-surface-3: 8 15 9;
+  --color-border: 26 47 32;
+  --color-border-card: 20 32 24;
+  --color-border-subtle: 14 28 17;
+  --color-fg: 240 253 244;
+  --color-muted: 96 122 108;
+  --color-faint: 61 84 70;
+  --color-secondary: 160 184 168;
+}
+
+* {
+  border-color: rgb(var(--color-border));
+  
+}
+
+::-webkit-scrollbar{
+  display: none;
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: rgb(var(--color-bg));
+  color: rgb(var(--color-fg));
+}
+
+::selection {
+  background-color: rgb(34 197 94 / 0.3);
+}
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid rgb(var(--color-bg));
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 0.2);
+  cursor: pointer;
+}
