@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Space_Grotesk, DM_Sans } from 'next/font/google';
+import { NavigationProgress } from '@/components/layout/NavigationProgress';
 import './globals.css';
 
 const spaceGrotesk = Space_Grotesk({
@@ -39,6 +41,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className={`${spaceGrotesk.variable} ${dmSans.variable} font-sans antialiased`}>
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         {children}
       </body>
     </html>
