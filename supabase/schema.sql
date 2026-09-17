@@ -23,6 +23,8 @@ create table if not exists public.courts (
   price_per_hour     numeric(10, 2) not null check (price_per_hour > 0),
   format             text not null default '7v7' check (format in ('5v5', '6v6', '7v7', '8v8')),
   allows_half_court  boolean not null default false,
+  opens_at           time not null default '08:00',
+  closes_at          time not null default '22:00',
   is_active          boolean not null default true,
   rating             numeric(2, 1) check (rating >= 0 and rating <= 5),
   created_at         timestamptz not null default now()
@@ -35,6 +37,11 @@ create table if not exists public.courts (
 alter table public.courts add column if not exists rating numeric(2, 1);
 alter table public.courts add column if not exists format text not null default '7v7';
 alter table public.courts add column if not exists allows_half_court boolean not null default false;
+-- opens_at/closes_at give each owner full control of their own hours. A
+-- court whose closes_at is <= its opens_at is treated as an overnight
+-- session (e.g. 16:00 -> 12:00 the next day) by generate_slots_for_court().
+alter table public.courts add column if not exists opens_at time not null default '08:00';
+alter table public.courts add column if not exists closes_at time not null default '22:00';
 alter table public.courts drop column if exists description;
 alter table public.courts drop column if exists surface_type;
 alter table public.courts drop column if exists tagline;
@@ -127,6 +134,88 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 
 -- =========================================================
+-- AUTOMATIC SLOT GENERATION
+-- Each court sets its own opens_at/closes_at (see courts table above). A
+-- session whose closes_at is <= its opens_at is treated as spanning
+-- midnight: hours up to 23:00 are stamped with the given date, the
+-- remainder with the following date. Both functions only ever insert —
+-- existing rows (including booked/blocked ones) are left untouched via
+-- ON CONFLICT DO NOTHING, so they're safe to call repeatedly.
+-- =========================================================
+
+create or replace function public.generate_slots_for_court(p_court_id uuid, p_date date)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_court public.courts;
+  v_hour  integer;
+begin
+  select * into v_court from public.courts where id = p_court_id;
+
+  if not found then
+    raise exception 'Court not found';
+  end if;
+
+  if v_court.closes_at > v_court.opens_at then
+    for v_hour in extract(hour from v_court.opens_at)::int .. extract(hour from v_court.closes_at)::int - 1 loop
+      insert into public.time_slots (court_id, date, start_time, end_time)
+      values (p_court_id, p_date, make_time(v_hour, 0, 0), make_time((v_hour + 1) % 24, 0, 0))
+      on conflict (court_id, date, start_time) do nothing;
+    end loop;
+  else
+    -- Overnight session: opens_at..23:00 stays on p_date, 00:00..closes_at
+    -- carries over onto p_date + 1 (mirrors how create_booking() below
+    -- walks consecutive-hour bookings across that same date boundary).
+    for v_hour in extract(hour from v_court.opens_at)::int .. 23 loop
+      insert into public.time_slots (court_id, date, start_time, end_time)
+      values (p_court_id, p_date, make_time(v_hour, 0, 0), make_time((v_hour + 1) % 24, 0, 0))
+      on conflict (court_id, date, start_time) do nothing;
+    end loop;
+
+    for v_hour in 0 .. extract(hour from v_court.closes_at)::int - 1 loop
+      insert into public.time_slots (court_id, date, start_time, end_time)
+      values (p_court_id, p_date + 1, make_time(v_hour, 0, 0), make_time(v_hour + 1, 0, 0))
+      on conflict (court_id, date, start_time) do nothing;
+    end loop;
+  end if;
+end;
+$$;
+
+create or replace function public.generate_upcoming_slots(p_court_id uuid, p_days integer default 14)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_offset integer;
+begin
+  for v_offset in 0 .. p_days - 1 loop
+    perform public.generate_slots_for_court(p_court_id, current_date + v_offset);
+  end loop;
+end;
+$$;
+
+-- Called on a daily schedule (see the pg_cron block at the bottom of this
+-- file) so every active court's slot window keeps rolling forward without
+-- an owner ever having to press "generate" — new players always see the
+-- next p_days days regardless of when a court was last visited.
+create or replace function public.generate_upcoming_slots_all_courts(p_days integer default 14)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_court record;
+begin
+  for v_court in select id from public.courts where is_active = true loop
+    perform public.generate_upcoming_slots(v_court.id, p_days);
+  end loop;
+end;
+$$;
+
+-- =========================================================
 -- ATOMIC BOOKING RPC
 -- Locks the slot row so two players can never win the same slot,
 -- computes the price from the court server-side (never trusts the client),
@@ -150,14 +239,15 @@ language plpgsql
 security definer set search_path = public
 as $$
 declare
-  v_slot     public.time_slots;
-  v_court    public.courts;
-  v_booking  public.bookings;
-  v_slot_ids uuid[];
-  v_next     public.time_slots;
-  v_cursor   time;
-  i          integer;
-  v_rate     numeric(10, 2);
+  v_slot        public.time_slots;
+  v_court       public.courts;
+  v_booking     public.bookings;
+  v_slot_ids    uuid[];
+  v_next        public.time_slots;
+  v_cursor_date date;
+  v_cursor_time time;
+  i             integer;
+  v_rate        numeric(10, 2);
 begin
   if p_court_portion not in ('full', 'half') then
     raise exception 'Invalid court portion';
@@ -183,13 +273,20 @@ begin
 
   -- A multi-hour booking must claim N contiguous slot rows, not just the
   -- first one — otherwise the later hours stay "available" and can be
-  -- double-booked by someone else.
+  -- double-booked by someone else. Overnight courts stamp hours past
+  -- midnight with the following calendar date (see generate_slots_for_court
+  -- above), so the cursor must roll the date forward whenever a slot's
+  -- end_time wraps to 00:00, not just walk start_time within the same date.
   v_slot_ids := array[v_slot.id];
-  v_cursor := v_slot.end_time;
+  v_cursor_date := v_slot.date;
+  v_cursor_time := v_slot.end_time;
+  if v_cursor_time = '00:00:00'::time then
+    v_cursor_date := v_cursor_date + 1;
+  end if;
 
   for i in 2..p_duration_hours loop
     select * into v_next from public.time_slots
-      where court_id = v_slot.court_id and date = v_slot.date and start_time = v_cursor
+      where court_id = v_slot.court_id and date = v_cursor_date and start_time = v_cursor_time
       for update;
 
     if not found or v_next.status <> 'available' then
@@ -197,7 +294,10 @@ begin
     end if;
 
     v_slot_ids := array_append(v_slot_ids, v_next.id);
-    v_cursor := v_next.end_time;
+    v_cursor_time := v_next.end_time;
+    if v_cursor_time = '00:00:00'::time then
+      v_cursor_date := v_cursor_date + 1;
+    end if;
   end loop;
 
   update public.time_slots set status = 'booked' where id = any(v_slot_ids);
@@ -353,3 +453,26 @@ create policy "owners can update their own court photos" on storage.objects
 drop policy if exists "owners can delete their own court photos" on storage.objects;
 create policy "owners can delete their own court photos" on storage.objects
   for delete using (bucket_id = 'court-photos' and owner = auth.uid());
+
+-- =========================================================
+-- DAILY SLOT-GENERATION SCHEDULE (best-effort)
+-- Keeps every active court's rolling 14-day slot window topped up once a
+-- day via pg_cron, independent of player traffic. The app also calls
+-- generate_upcoming_slots() lazily whenever a court's page is visited
+-- (lib/supabase/queries.ts -> getCourtById) and whenever a court is
+-- created/edited, so this is defense-in-depth rather than a hard
+-- requirement — if pg_cron isn't enabled on this Supabase project, the
+-- exception is swallowed and schema.sql still finishes applying cleanly.
+-- =========================================================
+
+do $$
+begin
+  create extension if not exists pg_cron;
+  perform cron.schedule(
+    'generate-upcoming-slots-daily',
+    '0 0 * * *',
+    $cron$select public.generate_upcoming_slots_all_courts(14);$cron$
+  );
+exception when others then
+  raise notice 'Skipping pg_cron schedule (pg_cron not available on this project): %', sqlerrm;
+end $$;

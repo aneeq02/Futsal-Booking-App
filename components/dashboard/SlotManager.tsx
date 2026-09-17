@@ -5,11 +5,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { createClient } from '@/lib/supabase/client';
-import { formatTime, addHours, cn } from '@/lib/utils';
+import { formatTime, cn } from '@/lib/utils';
 import type { TimeSlot } from '@/types/database.types';
-
-const DAY_START = 8;
-const DAY_END = 22;
 
 export function SlotManager({ courtId }: { courtId: string }) {
   const supabase = createClient();
@@ -36,13 +33,10 @@ export function SlotManager({ courtId }: { courtId: string }) {
 
   async function handleGenerate() {
     setGenerating(true);
-    const rows = Array.from({ length: DAY_END - DAY_START }, (_, i) => {
-      const startHour = DAY_START + i;
-      const start_time = `${String(startHour).padStart(2, '0')}:00`;
-      return { court_id: courtId, date, start_time, end_time: addHours(start_time, 1) };
-    });
-
-    const { data } = await supabase.from('time_slots').upsert(rows, { onConflict: 'court_id,date,start_time', ignoreDuplicates: true }).select();
+    // Delegates to the court's own opens_at/closes_at (set in Court
+    // Details above) rather than a hardcoded window — see
+    // generate_slots_for_court() in supabase/schema.sql.
+    await supabase.rpc('generate_slots_for_court', { p_court_id: courtId, p_date: date });
     setGenerating(false);
 
     const { data: refreshed } = await supabase
@@ -51,7 +45,7 @@ export function SlotManager({ courtId }: { courtId: string }) {
       .eq('court_id', courtId)
       .eq('date', date)
       .order('start_time', { ascending: true });
-    setSlots(refreshed ?? data ?? []);
+    setSlots(refreshed ?? []);
   }
 
   async function toggleBlocked(slot: TimeSlot) {
@@ -69,14 +63,16 @@ export function SlotManager({ courtId }: { courtId: string }) {
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto" />
         </div>
         <Button type="button" variant="secondary" size="sm" onClick={handleGenerate} disabled={generating}>
-          {generating ? 'Generating…' : 'Generate Default Slots'}
+          {generating ? 'Generating…' : 'Generate Slots'}
         </Button>
       </div>
 
       {loading ? (
         <p className="text-sm text-muted">Loading slots…</p>
       ) : slots.length === 0 ? (
-        <p className="text-sm text-muted">No slots for this date yet — generate the default schedule above.</p>
+        <p className="text-sm text-muted">
+          No slots for this date yet — this should fill in automatically, or use Generate Slots above to do it now.
+        </p>
       ) : (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
           {slots.map((slot) => (

@@ -45,6 +45,8 @@ export interface Database {
           price_per_hour: number;
           format: CourtFormat;
           allows_half_court: boolean;
+          opens_at: string;
+          closes_at: string;
           is_active: boolean;
           rating: number | null;
           created_at: string;
@@ -58,6 +60,8 @@ export interface Database {
           price_per_hour: number;
           format?: CourtFormat;
           allows_half_court?: boolean;
+          opens_at?: string;
+          closes_at?: string;
           is_active?: boolean;
           rating?: number | null;
           created_at?: string;
@@ -71,6 +75,8 @@ export interface Database {
           price_per_hour?: number;
           format?: CourtFormat;
           allows_half_court?: boolean;
+          opens_at?: string;
+          closes_at?: string;
           is_active?: boolean;
           rating?: number | null;
           created_at?: string;
@@ -255,6 +261,26 @@ export interface Database {
           p_court_portion?: CourtPortion;
         };
         Returns: Database['public']['Tables']['bookings']['Row'];
+      };
+      generate_slots_for_court: {
+        Args: {
+          p_court_id: string;
+          p_date: string;
+        };
+        Returns: void;
+      };
+      generate_upcoming_slots: {
+        Args: {
+          p_court_id: string;
+          p_days?: number;
+        };
+        Returns: void;
+      };
+      generate_upcoming_slots_all_courts: {
+        Args: {
+          p_days?: number;
+        };
+        Returns: void;
       };
     };
     Enums: Record<string, never>;

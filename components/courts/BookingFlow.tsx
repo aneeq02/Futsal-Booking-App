@@ -10,10 +10,9 @@ import { PhotoPlaceholder } from '@/components/courts/PhotoPlaceholder';
 import { Input } from '@/components/ui/Input';
 import { createClient } from '@/lib/supabase/client';
 import { sendBookingConfirmationSms } from '@/lib/notifications';
-import { cn, formatDateLabel, formatPKR, formatTime, addHours, getCourtPhotoUrl } from '@/lib/utils';
+import { cn, formatDateLabel, formatPKR, formatTime, getCourtPhotoUrl } from '@/lib/utils';
 import type { Court, CourtPhoto, CourtPortion, Profile, TimeSlot } from '@/types/database.types';
 
-const DURATIONS = [1, 2, 3];
 const PAYMENT_METHODS = [
   { id: 'jazzcash', label: 'JazzCash', icon: Smartphone, tag: 'Jazz', tagClass: 'bg-[#E91E8C] text-white' },
   { id: 'easypaisa', label: 'Easypaisa', icon: Smartphone, tag: null, tagClass: '' },
@@ -34,17 +33,16 @@ export function BookingFlow({
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [duration, setDuration] = useState(1);
+  const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
   const [portion, setPortion] = useState<CourtPortion>('full');
   const [paymentMethod, setPaymentMethod] = useState<(typeof PAYMENT_METHODS)[number]['id']>('jazzcash');
   const [promoCode, setPromoCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmedSlot, setConfirmedSlot] = useState<TimeSlot | null>(null);
+  const [confirmedSlots, setConfirmedSlots] = useState<TimeSlot[] | null>(null);
 
   useEffect(() => {
-    setSelectedSlot(null);
+    setSelectedSlots([]);
     setLoadingSlots(true);
 
     supabase
@@ -52,6 +50,7 @@ export function BookingFlow({
       .select('*')
       .eq('court_id', court.id)
       .eq('date', selectedDate)
+      .eq('status', 'available')
       .order('start_time', { ascending: true })
       .then(({ data }) => {
         setSlots(data ?? []);
@@ -60,17 +59,44 @@ export function BookingFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, court.id]);
 
+  const duration = selectedSlots.length;
+  const firstSlot = selectedSlots[0] ?? null;
+  const lastSlot = selectedSlots[selectedSlots.length - 1] ?? null;
   const rate = court.price_per_hour * (portion === 'half' ? 0.5 : 1);
   const total = rate * duration;
   const photoUrl = primaryPhoto ? getCourtPhotoUrl(primaryPhoto.storage_path) : null;
 
+  function toggleSlot(slot: TimeSlot) {
+    setSelectedSlots((prev) => {
+      if (prev.length === 0) return [slot];
+
+      const first = prev[0];
+      const last = prev[prev.length - 1];
+
+      // Extend the selection when the clicked slot is immediately
+      // before/after the current contiguous run.
+      if (last.end_time === slot.start_time) return [...prev, slot];
+      if (slot.end_time === first.start_time) return [slot, ...prev];
+
+      // Clicking an already-selected slot shrinks the run back to that
+      // point instead of leaving a gap in the middle.
+      if (slot.id === last.id) return prev.slice(0, -1);
+      if (slot.id === first.id) return prev.slice(1);
+      const idx = prev.findIndex((s) => s.id === slot.id);
+      if (idx !== -1) return prev.slice(0, idx + 1);
+
+      // Non-contiguous, unselected slot: start a fresh selection there.
+      return [slot];
+    });
+  }
+
   async function handleConfirm() {
-    if (!selectedSlot) return;
+    if (!firstSlot) return;
     setSubmitting(true);
     setError(null);
 
     const { data, error: rpcError } = await supabase.rpc('create_booking', {
-      p_slot_id: selectedSlot.id,
+      p_slot_id: firstSlot.id,
       p_duration_hours: duration,
       p_payment_method: paymentMethod,
       p_court_portion: portion,
@@ -81,7 +107,7 @@ export function BookingFlow({
     if (rpcError) {
       setError(
         rpcError.message.includes('consecutive')
-          ? 'Not enough consecutive slots are free for that duration — try a shorter duration or a different time.'
+          ? 'One of the selected slots was just taken — please re-select your slots.'
           : 'This slot was just booked by someone else. Please pick another.'
       );
       return;
@@ -89,20 +115,21 @@ export function BookingFlow({
 
     await sendBookingConfirmationSms(
       profile.phone,
-      `Your court "${court.name}" is booked for ${formatDateLabel(selectedDate)} at ${formatTime(selectedSlot.start_time)}.`
+      `Your court "${court.name}" is booked for ${formatDateLabel(selectedDate)} at ${formatTime(firstSlot.start_time)}.`
     );
 
-    setConfirmedSlot(selectedSlot);
+    setConfirmedSlots(selectedSlots);
     void data;
   }
 
-  if (confirmedSlot) {
+  if (confirmedSlots && confirmedSlots.length > 0) {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">
         <CheckCircle2 size={48} className="mx-auto text-primary" />
         <h1 className="mt-4 font-heading text-2xl font-bold text-fg">Slot Locked In!</h1>
         <p className="mt-2 text-sm text-muted">
-          {court.name} — {formatDateLabel(selectedDate)} at {formatTime(confirmedSlot.start_time)} for {duration}h.
+          {court.name} — {formatDateLabel(selectedDate)} at {formatTime(confirmedSlots[0].start_time)} for{' '}
+          {confirmedSlots.length}h.
         </p>
         <p className="mt-1 text-sm text-muted">Total: {formatPKR(total)}</p>
         <Link href="/courts" className="mt-6 inline-block text-sm font-medium text-primary">
@@ -138,46 +165,23 @@ export function BookingFlow({
 
         <section className="mb-6">
           <h2 className="mb-3 font-heading text-xs font-bold uppercase tracking-wide text-muted">Select Date</h2>
-          <DateStrip selectedDate={selectedDate} onSelect={setSelectedDate} />
+          <DateStrip selectedDate={selectedDate} onSelect={setSelectedDate} days={14} />
         </section>
 
         <section className="mb-6">
           <h2 className="mb-3 font-heading text-xs font-bold uppercase tracking-wide text-muted">
             Available Slots — {formatDateLabel(selectedDate)}
           </h2>
+          <p className="mb-3 text-xs text-faint">Tap a slot to select it, then tap consecutive slots to book multiple hours.</p>
           {loadingSlots ? (
             <p className="py-8 text-center text-sm text-muted">Loading slots…</p>
           ) : (
             <SlotGrid
               slots={slots}
-              selectedSlotId={selectedSlot?.id ?? null}
-              onSelect={setSelectedSlot}
+              selectedSlots={selectedSlots}
+              onToggle={toggleSlot}
               pricePerHour={court.price_per_hour}
             />
-          )}
-        </section>
-
-        <section>
-          <h2 className="mb-2.5 font-heading text-xs font-bold uppercase tracking-wide text-muted">Duration</h2>
-          <div className="flex gap-2">
-            {DURATIONS.map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDuration(d)}
-                className={cn(
-                  'rounded-[9px] border px-6 py-2.5 font-heading text-[13px] font-semibold transition-colors',
-                  duration === d ? 'border-primary bg-primary text-primary-fg' : 'border-border text-muted hover:border-primary/40'
-                )}
-              >
-                {d} Hour{d > 1 ? 's' : ''}
-              </button>
-            ))}
-          </div>
-          {selectedSlot && (
-            <p className="mt-2 text-xs text-faint">
-              {formatTime(selectedSlot.start_time)} – {formatTime(addHours(selectedSlot.start_time, duration))}
-            </p>
           )}
         </section>
 
@@ -207,26 +211,26 @@ export function BookingFlow({
       <div className="flex w-full shrink-0 flex-col border-t border-border-card bg-surface-2 p-6 lg:w-[340px] lg:border-l lg:border-t-0">
         <h2 className="mb-5 font-heading text-base font-bold text-fg">Your booking</h2>
 
-        {selectedSlot ? (
+        {firstSlot && lastSlot ? (
           <div className="mb-[18px] rounded-[10px] border border-primary/20 bg-primary/[0.06] p-3.5">
             <div className="mb-0.5 flex items-center gap-[7px]">
               <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-primary shadow-[0_0_6px_#22C55E]" />
               <span className="font-heading text-sm font-bold text-primary">
-                {formatTime(selectedSlot.start_time)} — {formatTime(addHours(selectedSlot.start_time, duration))}
+                {formatTime(firstSlot.start_time)} — {formatTime(lastSlot.end_time)}
               </span>
             </div>
             <div className="pl-[14px] text-xs text-muted">{formatDateLabel(selectedDate)}</div>
           </div>
         ) : (
           <div className="mb-[18px] rounded-[10px] border border-border-card bg-surface p-3.5 text-xs text-faint">
-            Pick a time slot to continue
+            Pick one or more consecutive slots to continue
           </div>
         )}
 
         <div className="mb-[18px] flex flex-col gap-3">
           <Row label="Court" value={court.name} />
           {court.allows_half_court && <Row label="Booking" value={portion === 'half' ? 'Half Court' : 'Full Court'} />}
-          <Row label="Duration" value={`${duration} Hour${duration > 1 ? 's' : ''}`} />
+          {duration > 0 && <Row label="Duration" value={`${duration} Hour${duration > 1 ? 's' : ''}`} />}
           <Row label="Rate" value={`${formatPKR(rate)}/hr`} />
         </div>
 
@@ -299,7 +303,7 @@ export function BookingFlow({
 
         <button
           type="button"
-          disabled={!selectedSlot || submitting}
+          disabled={!firstSlot || submitting}
           onClick={handleConfirm}
           className="flex w-full items-center justify-center gap-[7px] rounded-[11px] bg-primary py-[15px] font-heading text-[15px] font-bold text-primary-fg disabled:opacity-50"
         >

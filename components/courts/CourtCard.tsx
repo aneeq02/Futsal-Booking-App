@@ -12,9 +12,10 @@ interface CourtCardProps {
   availableSlots?: number;
   seed?: number;
   variant?: 'grid' | 'horizontal';
+  priority?: boolean;
 }
 
-export function CourtCard({ court, primaryPhoto, availableSlots, seed = 0, variant = 'grid' }: CourtCardProps) {
+export function CourtCard({ court, primaryPhoto, availableSlots, seed = 0, variant = 'grid', priority = false }: CourtCardProps) {
   const photoUrl = primaryPhoto ? getCourtPhotoUrl(primaryPhoto.storage_path) : null;
 
   const availabilityBadge =
@@ -34,7 +35,7 @@ export function CourtCard({ court, primaryPhoto, availableSlots, seed = 0, varia
       >
         <div className="relative h-auto w-[160px] shrink-0 sm:w-[180px]">
           {photoUrl ? (
-            <Image src={photoUrl} alt={court.name} fill sizes="180px" className="object-cover" />
+            <Image src={photoUrl} alt={court.name} fill sizes="180px" className="object-cover" priority={priority} />
           ) : (
             <PhotoPlaceholder className="h-full w-full" seed={seed} />
           )}
@@ -78,7 +79,14 @@ export function CourtCard({ court, primaryPhoto, availableSlots, seed = 0, varia
     <Link href={`/courts/${court.id}`} className="group block overflow-hidden rounded-2xl border border-border-card bg-surface shadow-[0_4px_20px_rgba(0,0,0,0.07)] dark:shadow-none">
       <div className="relative h-[220px] w-full">
         {photoUrl ? (
-          <Image src={photoUrl} alt={court.name} fill sizes="(min-width: 1024px) 33vw, 100vw" className="object-cover transition-transform group-hover:scale-105" />
+          <Image
+            src={photoUrl}
+            alt={court.name}
+            fill
+            sizes="(min-width: 1024px) 33vw, 100vw"
+            className="object-cover transition-transform group-hover:scale-105"
+            priority={priority}
+          />
         ) : (
           <PhotoPlaceholder className="h-full w-full" seed={seed} />
         )}

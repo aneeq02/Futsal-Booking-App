@@ -31,75 +31,31 @@ export async function getFeaturedCourts(limit = 6): Promise<CourtWithPrimaryPhot
   return attachPrimaryPhotos(data ?? []);
 }
 
-export interface SearchCourtsFilters {
-  query?: string;
-  areas?: string[];
-  minPrice?: number;
-  maxPrice?: number;
-  minRating?: number;
-}
-
-export async function searchCourts(filters: SearchCourtsFilters = {}): Promise<CourtWithPrimaryPhoto[]> {
-  const { query, areas, minPrice, maxPrice, minRating } = filters;
+export async function getActiveCourts(): Promise<CourtWithPrimaryPhoto[]> {
   const supabase = createClient();
-  let request = supabase.from('courts').select('*').eq('is_active', true);
-
-  if (query) {
-    request = request.or(`name.ilike.%${query}%,area.ilike.%${query}%`);
-  }
-  if (areas && areas.length > 0) {
-    request = request.in('area', areas);
-  }
-  if (minPrice !== undefined) {
-    request = request.gte('price_per_hour', minPrice);
-  }
-  if (maxPrice !== undefined) {
-    request = request.lte('price_per_hour', maxPrice);
-  }
-  if (minRating !== undefined) {
-    request = request.gte('rating', minRating);
-  }
-
-  const { data } = await request.order('name', { ascending: true });
+  const { data } = await supabase.from('courts').select('*').eq('is_active', true).order('name', { ascending: true });
   return attachPrimaryPhotos(data ?? []);
-}
-
-export async function getAreaCounts(): Promise<Record<string, number>> {
-  const supabase = createClient();
-  const { data } = await supabase.from('courts').select('area').eq('is_active', true);
-  const counts: Record<string, number> = {};
-  for (const row of data ?? []) {
-    counts[row.area] = (counts[row.area] ?? 0) + 1;
-  }
-  return counts;
 }
 
 export async function getCourtById(
   id: string
 ): Promise<(CourtWithPrimaryPhoto & { photos: CourtPhoto[] }) | null> {
   const supabase = createClient();
-  const { data: court } = await supabase.from('courts').select('*').eq('id', id).single();
+
+  // Opportunistically top up this court's rolling 14-day slot window on
+  // every visit (in parallel with the court fetch below) — idempotent via
+  // ON CONFLICT DO NOTHING in generate_slots_for_court, so this keeps
+  // players seeing "the next two weeks" fresh without an owner having to
+  // manually regenerate, even if the pg_cron daily job isn't available.
+  const [{ data: court }, { data: photos }] = await Promise.all([
+    supabase.from('courts').select('*').eq('id', id).single(),
+    supabase.from('court_photos').select('*').eq('court_id', id).order('is_primary', { ascending: false }),
+    supabase.rpc('generate_upcoming_slots', { p_court_id: id }),
+  ]);
+
   if (!court) return null;
 
-  const { data: photos } = await supabase
-    .from('court_photos')
-    .select('*')
-    .eq('court_id', id)
-    .order('is_primary', { ascending: false });
-
   return { ...court, primaryPhoto: photos?.[0] ?? null, photos: photos ?? [] };
-}
-
-export async function getCourtSlotsByDate(courtId: string, date: string) {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from('time_slots')
-    .select('*')
-    .eq('court_id', courtId)
-    .eq('date', date)
-    .order('start_time', { ascending: true });
-
-  return data ?? [];
 }
 
 export async function getFillingUpFastCourts(limit = 3): Promise<

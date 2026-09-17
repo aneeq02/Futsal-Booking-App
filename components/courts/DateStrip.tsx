@@ -16,7 +16,7 @@ export function DateStrip({ selectedDate, onSelect, days = 7 }: DateStripProps) 
   });
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 overflow-x-auto pb-1">
       {options.map((d) => {
         const value = d.toISOString().slice(0, 10);
         const selected = value === selectedDate;
@@ -26,7 +26,7 @@ export function DateStrip({ selectedDate, onSelect, days = 7 }: DateStripProps) 
             type="button"
             onClick={() => onSelect(value)}
             className={cn(
-              'flex-1 rounded-[10px] border py-2.5 text-center transition-colors',
+              'w-[58px] shrink-0 rounded-[10px] border py-2.5 text-center transition-colors',
               selected ? 'border-primary bg-primary' : 'border-border-card bg-surface hover:border-primary/40'
             )}
           >

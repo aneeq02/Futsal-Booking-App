@@ -1,10 +1,15 @@
+import dynamic from 'next/dynamic';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { WeeklyChart } from '@/components/dashboard/WeeklyChart';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { getCurrentProfile } from '@/lib/auth';
 import { getWeeklyBookingCounts, getOwnerBookings } from '@/lib/supabase/owner-queries';
 import { formatPKR } from '@/lib/utils';
 import { TrendingUp, DollarSign, Percent } from 'lucide-react';
+
+const WeeklyChart = dynamic(() => import('@/components/dashboard/WeeklyChart').then((m) => m.WeeklyChart), {
+  loading: () => <Skeleton className="h-[130px] w-full" />,
+});
 
 export default async function DashboardAnalyticsPage() {
   const profile = await getCurrentProfile();

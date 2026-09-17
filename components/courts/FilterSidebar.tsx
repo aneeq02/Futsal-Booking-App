@@ -1,7 +1,5 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useTransition } from 'react';
 import { Check } from 'lucide-react';
 import { KARACHI_AREAS } from '@/lib/constants';
 import { cn, formatPKR } from '@/lib/utils';
@@ -14,56 +12,33 @@ const RATING_OPTIONS = [
   { label: '4.5+', value: 4.5 },
 ];
 
-export function FilterSidebar({ areaCounts, total }: { areaCounts: Record<string, number>; total: number }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+interface FilterSidebarProps {
+  areaCounts: Record<string, number>;
+  total: number;
+  selectedAreas: string[];
+  minPrice: number;
+  maxPrice: number;
+  minRating?: number;
+  onToggleArea: (area: string) => void;
+  onClearAreas: () => void;
+  onSetPrice: (key: 'minPrice' | 'maxPrice', value: number) => void;
+  onSetRating: (value: number | undefined) => void;
+}
 
-  const selectedAreas = searchParams.get('areas')?.split(',').filter(Boolean) ?? [];
-  const minPrice = Number(searchParams.get('minPrice') ?? PRICE_MIN);
-  const maxPrice = Number(searchParams.get('maxPrice') ?? PRICE_MAX);
-  const minRating = searchParams.get('minRating') ? Number(searchParams.get('minRating')) : undefined;
-
-  function updateParams(mutate: (params: URLSearchParams) => void) {
-    const params = new URLSearchParams(searchParams.toString());
-    mutate(params);
-    // Wrapped in a transition so this in-page refinement dims the results
-    // instead of triggering the full-page loading skeleton on every click.
-    startTransition(() => {
-      router.push(`/courts?${params.toString()}`);
-    });
-  }
-
-  function toggleArea(area: string) {
-    updateParams((params) => {
-      const next = selectedAreas.includes(area)
-        ? selectedAreas.filter((a) => a !== area)
-        : [...selectedAreas, area];
-      if (next.length > 0) params.set('areas', next.join(','));
-      else params.delete('areas');
-    });
-  }
-
-  function setPrice(key: 'minPrice' | 'maxPrice', value: number) {
-    updateParams((params) => {
-      params.set(key, String(value));
-    });
-  }
-
-  function setRating(value: number | undefined) {
-    updateParams((params) => {
-      if (value !== undefined) params.set('minRating', String(value));
-      else params.delete('minRating');
-    });
-  }
-
+export function FilterSidebar({
+  areaCounts,
+  total,
+  selectedAreas,
+  minPrice,
+  maxPrice,
+  minRating,
+  onToggleArea,
+  onClearAreas,
+  onSetPrice,
+  onSetRating,
+}: FilterSidebarProps) {
   return (
-    <aside
-      className={cn(
-        'w-full shrink-0 overflow-y-auto border-border-subtle bg-surface-3 px-5 py-6 transition-opacity sm:w-[264px] sm:border-r dark:bg-bg',
-        isPending && 'opacity-60'
-      )}
-    >
+    <aside className="w-full shrink-0 overflow-y-auto border-border-subtle bg-surface-3 px-5 py-6 sm:w-[264px] sm:border-r dark:bg-bg">
       <div className="mb-5 text-xs text-muted">
         Showing <strong className="text-fg">{total} courts</strong> across Karachi
       </div>
@@ -71,19 +46,14 @@ export function FilterSidebar({ areaCounts, total }: { areaCounts: Record<string
       <div className="mb-7">
         <div className="mb-3.5 font-heading text-xs font-bold uppercase tracking-wide text-fg">Area</div>
         <div className="flex flex-col gap-0.5">
-          <AreaCheckbox
-            label="All Areas"
-            count={total}
-            active={selectedAreas.length === 0}
-            onClick={() => updateParams((params) => params.delete('areas'))}
-          />
+          <AreaCheckbox label="All Areas" count={total} active={selectedAreas.length === 0} onClick={onClearAreas} />
           {KARACHI_AREAS.map((area) => (
             <AreaCheckbox
               key={area}
               label={area}
               count={areaCounts[area] ?? 0}
               active={selectedAreas.includes(area)}
-              onClick={() => toggleArea(area)}
+              onClick={() => onToggleArea(area)}
             />
           ))}
         </div>
@@ -110,7 +80,7 @@ export function FilterSidebar({ areaCounts, total }: { areaCounts: Record<string
             max={PRICE_MAX}
             step={100}
             value={minPrice}
-            onChange={(e) => setPrice('minPrice', Math.min(Number(e.target.value), maxPrice - 100))}
+            onChange={(e) => onSetPrice('minPrice', Math.min(Number(e.target.value), maxPrice - 100))}
             className="pointer-events-none absolute h-[14px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto"
           />
           <input
@@ -119,7 +89,7 @@ export function FilterSidebar({ areaCounts, total }: { areaCounts: Record<string
             max={PRICE_MAX}
             step={100}
             value={maxPrice}
-            onChange={(e) => setPrice('maxPrice', Math.max(Number(e.target.value), minPrice + 100))}
+            onChange={(e) => onSetPrice('maxPrice', Math.max(Number(e.target.value), minPrice + 100))}
             className="pointer-events-none absolute h-[14px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto"
           />
         </div>
@@ -132,7 +102,7 @@ export function FilterSidebar({ areaCounts, total }: { areaCounts: Record<string
             <button
               key={opt.label}
               type="button"
-              onClick={() => setRating(opt.value)}
+              onClick={() => onSetRating(opt.value)}
               className={cn(
                 'flex-1 rounded-lg border px-2 py-[7px] text-xs transition-colors',
                 minRating === opt.value

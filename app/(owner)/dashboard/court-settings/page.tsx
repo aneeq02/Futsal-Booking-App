@@ -1,12 +1,32 @@
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { CourtSettingsForm } from '@/components/dashboard/CourtSettingsForm';
-import { CourtPhotoManager } from '@/components/dashboard/CourtPhotoManager';
-import { SlotManager } from '@/components/dashboard/SlotManager';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { getCurrentProfile } from '@/lib/auth';
 import { getOwnerCourts } from '@/lib/supabase/owner-queries';
 import { createClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
+
+const CourtPhotoManager = dynamic(() => import('@/components/dashboard/CourtPhotoManager').then((m) => m.CourtPhotoManager), {
+  loading: () => (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="aspect-square rounded-xl" />
+      ))}
+    </div>
+  ),
+});
+
+const SlotManager = dynamic(() => import('@/components/dashboard/SlotManager').then((m) => m.SlotManager), {
+  loading: () => (
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+      {Array.from({ length: 10 }).map((_, i) => (
+        <Skeleton key={i} className="h-[52px] rounded-xl" />
+      ))}
+    </div>
+  ),
+});
 
 export default async function CourtSettingsPage({ searchParams }: { searchParams: { courtId?: string } }) {
   const profile = await getCurrentProfile();

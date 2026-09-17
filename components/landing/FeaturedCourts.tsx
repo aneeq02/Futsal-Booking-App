@@ -45,7 +45,7 @@ export function FeaturedCourts({ courts }: { courts: CourtWithPrimaryPhoto[] }) 
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((court, i) => (
-            <CourtCard key={court.id} court={court} primaryPhoto={court.primaryPhoto} seed={i} />
+            <CourtCard key={court.id} court={court} primaryPhoto={court.primaryPhoto} seed={i} priority={i < 3} />
           ))}
         </div>
       )}

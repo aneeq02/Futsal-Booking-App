@@ -1,13 +1,18 @@
+import dynamic from 'next/dynamic';
 import { DollarSign, CalendarCheck, Gauge, Clock } from 'lucide-react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { StatCard, StatDelta } from '@/components/dashboard/StatCard';
-import { WeeklyChart } from '@/components/dashboard/WeeklyChart';
 import { Timeline } from '@/components/dashboard/Timeline';
 import { BookingsTable, type BookingRow } from '@/components/dashboard/BookingsTable';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { getCurrentProfile } from '@/lib/auth';
 import { getOwnerStats, getUpcomingToday, getWeeklyBookingCounts, getOwnerBookings } from '@/lib/supabase/owner-queries';
 import { formatPKR } from '@/lib/utils';
 import type { BookingStatus, PaymentMethod } from '@/types/database.types';
+
+const WeeklyChart = dynamic(() => import('@/components/dashboard/WeeklyChart').then((m) => m.WeeklyChart), {
+  loading: () => <Skeleton className="h-[130px] w-full" />,
+});
 
 export default async function DashboardOverviewPage() {
   const profile = await getCurrentProfile();
