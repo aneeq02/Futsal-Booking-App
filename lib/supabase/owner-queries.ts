@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { addDays, karachiNowMinutes, todayISO } from '@/lib/utils';
 import type { Court, CourtPhoto } from '@/types/database.types';
 
 export interface OwnerBookingRow {
@@ -60,7 +61,7 @@ export async function getOwnerBookings(ownerId: string): Promise<OwnerBookingRow
 
 export async function getOwnerStats(ownerId: string) {
   const supabase = createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   const { data: courts } = await supabase.from('courts').select('id').eq('owner_id', ownerId);
   const courtIds = (courts ?? []).map((c) => c.id);
@@ -109,8 +110,8 @@ export interface TimelineSlot {
 
 export async function getUpcomingToday(ownerId: string): Promise<TimelineSlot[]> {
   const supabase = createClient();
-  const today = new Date().toISOString().slice(0, 10);
-  const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  const today = todayISO();
+  const nowMinutes = karachiNowMinutes();
 
   const { data: courts } = await supabase.from('courts').select('id, name, price_per_hour').eq('owner_id', ownerId);
   if (!courts || courts.length === 0) return [];
@@ -163,16 +164,9 @@ export async function getWeeklyBookingCounts(
   const courtIds = (courts ?? []).map((c) => c.id);
   if (courtIds.length === 0) return [];
 
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().slice(0, 10);
-  });
-  const previousDays = days.map((day) => {
-    const d = new Date(`${day}T00:00:00`);
-    d.setDate(d.getDate() - 7);
-    return d.toISOString().slice(0, 10);
-  });
+  const today = todayISO();
+  const days = Array.from({ length: 7 }, (_, i) => addDays(today, i - 6));
+  const previousDays = days.map((day) => addDays(day, -7));
 
   const { data } = await supabase
     .from('bookings')
@@ -184,9 +178,12 @@ export async function getWeeklyBookingCounts(
   const countFor = (day: string) =>
     (data ?? []).filter((b) => (b.slot as unknown as { date: string })?.date === day).length;
 
-  return days.map((day, i) => ({
-    label: new Date(`${day}T00:00:00`).toLocaleDateString('en-PK', { weekday: 'short' }),
-    value: countFor(day),
-    previousValue: countFor(previousDays[i]),
-  }));
+  return days.map((day, i) => {
+    const [y, m, d] = day.split('-').map(Number);
+    return {
+      label: new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-PK', { weekday: 'short', timeZone: 'Asia/Karachi' }),
+      value: countFor(day),
+      previousValue: countFor(previousDays[i]),
+    };
+  });
 }

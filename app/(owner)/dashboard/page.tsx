@@ -7,7 +7,7 @@ import { BookingsTable, type BookingRow } from '@/components/dashboard/BookingsT
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getCurrentProfile } from '@/lib/auth';
 import { getOwnerStats, getUpcomingToday, getWeeklyBookingCounts, getOwnerBookings } from '@/lib/supabase/owner-queries';
-import { formatPKR } from '@/lib/utils';
+import { formatPKR, todayISO } from '@/lib/utils';
 import type { BookingStatus, PaymentMethod } from '@/types/database.types';
 
 const WeeklyChart = dynamic(() => import('@/components/dashboard/WeeklyChart').then((m) => m.WeeklyChart), {
@@ -39,7 +39,12 @@ export default async function DashboardOverviewPage() {
     status: b.status as BookingStatus,
   }));
 
-  const today = new Date().toLocaleDateString('en-PK', { weekday: 'long', month: 'long', day: 'numeric' });
+  const today = new Date(`${todayISO()}T00:00:00Z`).toLocaleDateString('en-PK', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Asia/Karachi',
+  });
 
   return (
     <div>

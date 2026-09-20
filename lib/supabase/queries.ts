@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { todayISO } from '@/lib/utils';
 import type { Court, CourtPhoto } from '@/types/database.types';
 
 export type CourtWithPrimaryPhoto = Court & { primaryPhoto: CourtPhoto | null };
@@ -62,7 +63,7 @@ export async function getFillingUpFastCourts(limit = 3): Promise<
   (CourtWithPrimaryPhoto & { availableSlots: number; totalSlots: number })[]
 > {
   const supabase = createClient();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   const { data: courts } = await supabase.from('courts').select('*').eq('is_active', true);
   if (!courts || courts.length === 0) return [];

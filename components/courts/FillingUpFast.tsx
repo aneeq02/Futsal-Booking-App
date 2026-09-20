@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { cn, formatPKR } from '@/lib/utils';
+import { cn, formatPKR, todayISO } from '@/lib/utils';
 import type { CourtWithPrimaryPhoto } from '@/lib/supabase/queries';
 
 interface Props {
@@ -18,7 +18,7 @@ export function FillingUpFast({ courts: initialCourts }: Props) {
     if (initialCourts.length === 0) return;
 
     const supabase = createClient();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
     const courtIds = initialCourts.map((c) => c.id);
 
     const channel = supabase

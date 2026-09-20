@@ -47,3 +47,49 @@ export function addHours(time: string, hours: number): string {
   const newM = total % 60;
   return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
 }
+
+// This app has one market (Karachi) and no per-user timezone concept, so
+// "today"/"now" must always mean Pakistan time — never the browser's or
+// the server's own ambient timezone. `new Date().toISOString()` converts
+// to UTC first, which silently rolls back to "yesterday" for part of
+// every day in UTC+5 (e.g. any time before ~5 AM PKT); a server hosted in
+// UTC (the default on most platforms) would be affected around the clock,
+// not just near midnight. Every "what day/time is it" computation in this
+// codebase should go through these helpers instead of raw `Date` methods.
+
+export function todayISO(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Karachi' });
+}
+
+// True once a slot's start time is now or in the past (Karachi time) — a
+// 4:00 PM slot stops being bookable/visible at 4:00 PM, not just once its
+// hour is fully over.
+export function isPastKarachi(date: string, startTime: string): boolean {
+  const today = todayISO();
+  if (date < today) return true;
+  if (date > today) return false;
+  const [h, m] = startTime.split(':').map(Number);
+  return h * 60 + m <= karachiNowMinutes();
+}
+
+export function karachiNowMinutes(): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Karachi',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? 0);
+  const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? 0);
+  return hour * 60 + minute;
+}
+
+export function addDays(date: string, days: number): string {
+  // Pure UTC arithmetic on the Y/M/D components — never interprets the
+  // string as a local-time instant, so there's no ambient-timezone
+  // round-trip for setDate()/toISOString() to get wrong.
+  const [y, m, d] = date.split('-').map(Number);
+  const utc = new Date(Date.UTC(y, m - 1, d));
+  utc.setUTCDate(utc.getUTCDate() + days);
+  return utc.toISOString().slice(0, 10);
+}

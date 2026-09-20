@@ -215,6 +215,39 @@ begin
 end;
 $$;
 
+-- generate_slots_for_court() only ever inserts, so slots need a separate
+-- sweep to disappear once they're no longer valid options. Deletes stale
+-- AVAILABLE slots in two cases — booked/blocked rows are NEVER touched by
+-- either, so an existing reservation can never be silently dropped:
+--   1. Outside a court's current opens_at/closes_at (e.g. hours were
+--      narrowed after slots already existed for the wider window, or a
+--      court had slots generated before opens_at/closes_at existed).
+--   2. In the past (Karachi time) — a slot that already started is not a
+--      real option any more regardless of hours.
+create or replace function public.cleanup_stale_slots()
+returns integer
+language sql
+security definer set search_path = public
+as $$
+  with deleted as (
+    delete from public.time_slots ts
+    using public.courts c
+    where ts.court_id = c.id
+      and ts.status = 'available'
+      and (
+        not (
+          case
+            when c.closes_at > c.opens_at then ts.start_time >= c.opens_at and ts.start_time < c.closes_at
+            else ts.start_time >= c.opens_at or ts.start_time < c.closes_at
+          end
+        )
+        or (ts.date + ts.start_time) <= (now() at time zone 'Asia/Karachi')
+      )
+    returning ts.id
+  )
+  select count(*)::integer from deleted;
+$$;
+
 -- =========================================================
 -- ATOMIC BOOKING RPC
 -- Locks the slot row so two players can never win the same slot,
@@ -261,6 +294,15 @@ begin
 
   if v_slot.status <> 'available' then
     raise exception 'Slot is no longer available';
+  end if;
+
+  -- The UI filters out slots whose start time has already passed, but
+  -- that's a display concern only — a client sitting on a stale page (or
+  -- calling this RPC directly) must not be able to book a slot that's
+  -- already begun. Compared in Karachi wall-clock time, same as the
+  -- frontend's isPastKarachi(), since this app has one market/timezone.
+  if (v_slot.date + v_slot.start_time) <= (now() at time zone 'Asia/Karachi') then
+    raise exception 'This slot has already passed';
   end if;
 
   select * into v_court from public.courts where id = v_slot.court_id;
@@ -455,14 +497,17 @@ create policy "owners can delete their own court photos" on storage.objects
   for delete using (bucket_id = 'court-photos' and owner = auth.uid());
 
 -- =========================================================
--- DAILY SLOT-GENERATION SCHEDULE (best-effort)
+-- SCHEDULED JOBS (best-effort)
 -- Keeps every active court's rolling 14-day slot window topped up once a
--- day via pg_cron, independent of player traffic. The app also calls
--- generate_upcoming_slots() lazily whenever a court's page is visited
--- (lib/supabase/queries.ts -> getCourtById) and whenever a court is
--- created/edited, so this is defense-in-depth rather than a hard
--- requirement — if pg_cron isn't enabled on this Supabase project, the
--- exception is swallowed and schema.sql still finishes applying cleanly.
+-- day, and sweeps out past/stale AVAILABLE slots hourly, via pg_cron —
+-- independent of player traffic. The app also calls generate_upcoming_
+-- slots() lazily whenever a court's page is visited (lib/supabase/
+-- queries.ts -> getCourtById) and whenever a court is created/edited, and
+-- create_booking() already rejects a passed slot server-side regardless
+-- of whether this cleanup has run yet — so this whole block is
+-- defense-in-depth/tidiness rather than a hard requirement. If pg_cron
+-- isn't enabled on this Supabase project, the exception is swallowed and
+-- schema.sql still finishes applying cleanly.
 -- =========================================================
 
 do $$
@@ -472,6 +517,11 @@ begin
     'generate-upcoming-slots-daily',
     '0 0 * * *',
     $cron$select public.generate_upcoming_slots_all_courts(14);$cron$
+  );
+  perform cron.schedule(
+    'cleanup-stale-slots-hourly',
+    '0 * * * *',
+    $cron$select public.cleanup_stale_slots();$cron$
   );
 exception when others then
   raise notice 'Skipping pg_cron schedule (pg_cron not available on this project): %', sqlerrm;

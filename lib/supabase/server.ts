@@ -24,6 +24,14 @@ export function createClient() {
           }
         },
       },
+      global: {
+        // Next.js caches server-side fetch() calls by default (force-cache),
+        // independent of whether the page itself is dynamically rendered —
+        // without this, Supabase reads from Server Components can silently
+        // serve stale data (e.g. a court's opens_at/closes_at reflecting an
+        // earlier request instead of the current row).
+        fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }),
+      },
     }
   );
 }

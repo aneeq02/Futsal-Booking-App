@@ -10,7 +10,7 @@ import { PhotoPlaceholder } from '@/components/courts/PhotoPlaceholder';
 import { Input } from '@/components/ui/Input';
 import { createClient } from '@/lib/supabase/client';
 import { sendBookingConfirmationSms } from '@/lib/notifications';
-import { cn, formatDateLabel, formatPKR, formatTime, getCourtPhotoUrl } from '@/lib/utils';
+import { addDays, cn, formatDateLabel, formatPKR, formatTime, getCourtPhotoUrl, isPastKarachi, todayISO } from '@/lib/utils';
 import type { Court, CourtPhoto, CourtPortion, Profile, TimeSlot } from '@/types/database.types';
 
 const PAYMENT_METHODS = [
@@ -30,7 +30,7 @@ export function BookingFlow({
 }) {
   const supabase = createClient();
 
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(() => todayISO());
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
@@ -41,23 +41,43 @@ export function BookingFlow({
   const [error, setError] = useState<string | null>(null);
   const [confirmedSlots, setConfirmedSlots] = useState<TimeSlot[] | null>(null);
 
+  // An overnight court's session that starts tonight (selectedDate) keeps
+  // going into the early hours of the next calendar date — those rows are
+  // stamped with that next date (see generate_slots_for_court() in
+  // schema.sql), so they'd never show up here on a plain single-date
+  // fetch. Pull them in too so the player can click straight through
+  // midnight instead of the session appearing to end at 11 PM.
+  const isOvernight = court.closes_at <= court.opens_at;
+
   useEffect(() => {
     setSelectedSlots([]);
     setLoadingSlots(true);
+
+    const nextDate = addDays(selectedDate, 1);
+    const dates = isOvernight ? [selectedDate, nextDate] : [selectedDate];
 
     supabase
       .from('time_slots')
       .select('*')
       .eq('court_id', court.id)
-      .eq('date', selectedDate)
+      .in('date', dates)
       .eq('status', 'available')
+      .order('date', { ascending: true })
       .order('start_time', { ascending: true })
       .then(({ data }) => {
-        setSlots(data ?? []);
+        const rows = data ?? [];
+        // Only borrow the *early* portion of the next date — its start_time
+        // is always < opens_at by construction, so this can never pick up
+        // that next date's own evening session (which belongs to its own
+        // date-strip selection).
+        const filtered = isOvernight ? rows.filter((s) => s.date === selectedDate || s.start_time < court.opens_at) : rows;
+        // A slot that's already started is no longer bookable — drop it
+        // rather than let it linger as a clickable option.
+        setSlots(filtered.filter((s) => !isPastKarachi(s.date, s.start_time)));
         setLoadingSlots(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, court.id]);
+  }, [selectedDate, court.id, isOvernight, court.opens_at]);
 
   const duration = selectedSlots.length;
   const firstSlot = selectedSlots[0] ?? null;
@@ -105,11 +125,14 @@ export function BookingFlow({
     setSubmitting(false);
 
     if (rpcError) {
-      setError(
-        rpcError.message.includes('consecutive')
-          ? 'One of the selected slots was just taken — please re-select your slots.'
-          : 'This slot was just booked by someone else. Please pick another.'
-      );
+      if (rpcError.message.includes('consecutive')) {
+        setError('One of the selected slots was just taken — please re-select your slots.');
+      } else if (rpcError.message.includes('already passed')) {
+        setError('That slot has already started — please pick another time.');
+        setSelectedSlots([]);
+      } else {
+        setError('This slot was just booked by someone else. Please pick another.');
+      }
       return;
     }
 
@@ -178,6 +201,7 @@ export function BookingFlow({
           ) : (
             <SlotGrid
               slots={slots}
+              selectedDate={selectedDate}
               selectedSlots={selectedSlots}
               onToggle={toggleSlot}
               pricePerHour={court.price_per_hour}

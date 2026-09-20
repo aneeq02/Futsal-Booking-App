@@ -5,13 +5,13 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { createClient } from '@/lib/supabase/client';
-import { formatTime, cn } from '@/lib/utils';
+import { formatTime, cn, todayISO } from '@/lib/utils';
 import type { TimeSlot } from '@/types/database.types';
 
 export function SlotManager({ courtId }: { courtId: string }) {
   const supabase = createClient();
 
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => todayISO());
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);

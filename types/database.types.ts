@@ -282,6 +282,10 @@ export interface Database {
         };
         Returns: void;
       };
+      cleanup_stale_slots: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
